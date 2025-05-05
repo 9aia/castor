@@ -1,10 +1,10 @@
 
 import * as schema from "@/schema";
 import { drizzle } from "drizzle-orm/d1";
+import fs from "node:fs";
 import wrangler from "wrangler";
 import { z } from "zod";
-import { BlockRegister, getBlocks, loadSessions, loadConfig, registry } from "./_sdk";
-import fs from "node:fs";
+import { BlockRegister, getBlocks, loadConfig, loadSessions, Registry, Schema } from "./_sdk";
 const { default: enquirer } = await import('enquirer');
 const { prompt } = enquirer;
 
@@ -20,21 +20,14 @@ const { prompt } = enquirer;
 // TODO: add support for folders and list files
 // TODO: add AI for executing blocks using natural language and prompting for input
 
-// FIXME: UnhandledPromiseRejection
 // TODO: add linter
+// TODO: experiment dependable blocks
 
 // #region Db
 
 let db: unknown;
 
 // #endregion
-
-export async function runBlockByName(name: string, input: unknown) {
-  const found = registry.find(b => b.name === name);
-  if (!found) throw new Error(`Block "${name}" not found.`);
-  const parsed = found.schema ? found.schema.parse(input) : input;
-  return await found.query?.(db as any, parsed);
-}
 
 async function promptField(fieldName: string, field: unknown) {
   if (field instanceof z.ZodString) {
@@ -107,7 +100,7 @@ async function showBlockForm(schema: z.ZodType) {
   if (!validation.success) {
     // TODO: add better error handling with a menu (retry, go back to query, exit Castor)
     console.error("❌ Error validating input:", validation.error.format());
-    return showBlockForm(schema);
+    return await showBlockForm(schema);
   }
   return input;
 }
@@ -125,7 +118,25 @@ function renderResult(result: Record<string, any>[]) {
   console.table(result)
 }
 
-async function showBlock(block: BlockRegister, lastInput?: any) {
+async function runBlock<S extends Schema | undefined>(block: BlockRegister<S>, input: unknown) {
+  try {
+    const parsedInput = block.schema ? block.schema.parse(input) : input;
+
+    if(block.query) {
+      const result = await block.query?.(db as any, parsedInput);
+      renderResult(result);
+    }
+    
+    if(block.run) {
+      await block.run?.(db as any, parsedInput);
+      console.log("Block executed successfully.");
+    }
+  } catch (err) {
+    console.error("❌ Error running block: \n\n", err);
+  }
+}
+
+async function showBlock<S extends Schema | undefined>(block: BlockRegister<S>, lastInput?: any) {
   const input = lastInput ?? (block.schema ? await showBlockForm(block.schema) : {})
 
   if (block.danger) {
@@ -142,12 +153,7 @@ async function showBlock(block: BlockRegister, lastInput?: any) {
     }
   }
 
-  try {
-    const result = await runBlockByName(block.name, input);
-    renderResult(result);
-  } catch (err) {
-    console.error("❌ Error running block: \n\n", err);
-  }
+  await runBlock(block, input)
 
   console.log("")
 
@@ -164,18 +170,18 @@ async function showBlock(block: BlockRegister, lastInput?: any) {
   });
 
   if (action === "Re-run") {
-    return showBlock(block, input);
+    return await showBlock(block, input);
   } else if (action === "Re-run from scratch") {
-    return showBlock(block)
+    return await showBlock(block)
   } else if (action === "Menu") {
-    return showBlocks(getBlocks());
+    return await showBlocks(getBlocks());
   } else {
     console.log("Exiting...");
     process.exit(0);
   }
 }
 
-async function showBlocks(blocks: BlockRegister[]) {
+async function showBlocks<S extends Schema | undefined>(blocks: Registry<S>) {
   const { blockName } = await prompt<{ blockName: string }>({
     type: "select",
     name: "blockName",
@@ -184,7 +190,7 @@ async function showBlocks(blocks: BlockRegister[]) {
   });
 
   const block = blocks.find(b => b.name === blockName)!;
-  showBlock(block);
+  await showBlock(block);
 }
 
 function validateConfigPath(filePath: string | undefined) {
@@ -217,9 +223,9 @@ async function main() {
 
     console.log("Blocks loaded:", blocks.length, "\n");
 
-    showBlocks(blocks)
+    await showBlocks(blocks)
   } catch (err) {
-    console.error("❌ Error:\n\n", err);
+    console.error("❌ Error:\n", err);
     process.exit(1);
   }
 }

@@ -2,7 +2,7 @@ import { block, sql } from "./_sdk";
 
 block("Drop all database", {
   danger: true,
-  query: db => db.run(sql`
+  run: db => db.run(sql`
     -- Drop all triggers
     SELECT 'DROP TRIGGER IF EXISTS "' || name || '";'
     FROM sqlite_master

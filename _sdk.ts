@@ -90,26 +90,32 @@ export async function loadConfig(filePath?: string) {
 
 // #region Blocks
 
-export type Block<T extends z.ZodType = any> = {
+export type Schema = z.ZodType
+
+type WithoutUndefined<T> = T extends undefined ? never : T;
+type CheckUndefined<T, V, F> = [T] extends [undefined] ? V : F;
+
+export type Block<S extends Schema | undefined = undefined> = {
   name: string,
   description?: string,
-  danger?: boolean
-  schema?: T
-  file?: string
-  query: (db: Database, input: z.infer<T>) => Promise<any> | any
+  danger?: boolean,
+  schema?: S,
+  file?: string,
+  query?: (db: Database, input: CheckUndefined<S, undefined, z.infer<WithoutUndefined<S>>>) => Promise<any> | any,
+  run?: (db: Database, input: CheckUndefined<S, undefined, z.infer<WithoutUndefined<S>>>) => Promise<any> | any,
 }
 
-export function block<T extends z.ZodType>(
+export function block<S extends Schema | undefined = undefined>(
   name: string,
-  config: Omit<Block<T>, "name">
+  config: Omit<Block<S>, "name">
 ) {
-  registerBlock({ name, ...config })
+  registerBlock({ name, ...config as any });
   return config;
 }
 
-export function isBlock<T extends z.ZodType>(
+export function isBlock<S extends Schema | undefined = undefined>(
   val: any
-): val is Block<T> {
+): val is Block<S> {
   return val && typeof val === "object" && "query" in val && typeof val.query === "function";
 }
 
@@ -117,20 +123,22 @@ export function isBlock<T extends z.ZodType>(
 
 // #region Registry
 
-export type BlockRegister = Block & {
+export type BlockRegister<S extends Schema | undefined> = Block<S> & {
   name: string
 }
 
-export const registry: BlockRegister[] = [];
+export type Registry<S extends Schema | undefined> = BlockRegister<S>[]
 
-export function registerBlock(config: Block, file?: string) {
+const registry: BlockRegister<any>[] = [];
+
+export function registerBlock<S extends Schema | undefined>(config: Block<S>, file?: string) {
   // TODO: validate config schema (can't include object values)
 
   registry.push({ file: config.file || file, ...config });
 }
 
-export function getBlocks() {
-  return [...registry];
+export function getBlocks<S extends Schema | undefined>() {
+  return [...registry] as Registry<S>;
 }
 
 export async function loadSessions() {
