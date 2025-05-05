@@ -1,0 +1,196 @@
+
+import { z } from "zod";
+import { BlockConfig, db, isBlockConfig } from "./_sdk";
+import fg from "fast-glob";
+
+// Notes
+// 1. How to allow for copying response columns?
+// 2. How to allow for copying response rows?
+// 3. How to allow for copying response cells?
+
+// TODO: add support for folders
+// TODO: add danger block (ask for confirmation before running)
+
+const { default: enquirer } = await import('enquirer');
+const { prompt } = enquirer;
+
+// #region Registry
+
+export type BlockRegister = BlockConfig & {
+  name: string
+}
+
+const registry: BlockRegister[] = [];
+
+export function registerBlock(name: string, config: BlockConfig) {
+  // TODO: validate config schema (can't include object values)
+
+  registry.push({ name, ...config });
+}
+
+export function getBlocks() {
+  return [...registry];
+}
+
+// Load all dbms/**/*.ts blocks dynamically
+export async function loadBlocks() {
+  const files = await fg(["./dbms/**/*.ts", "!dbms/**/_*.ts", "!dbms/**/.*"], { absolute: true });
+
+  for (const file of files) {
+    const mod = await import(file);
+    const exports = Object.entries(mod);
+
+    for (const [name, value] of exports) {
+      if (isBlockConfig(value)) {
+        registerBlock(name, value);
+      }
+    }
+  }
+}
+
+// #endregion
+
+export async function runBlockByName(name: string, props: unknown) {
+  const found = registry.find(b => b.name === name);
+  if (!found) throw new Error(`Block "${name}" not found.`);
+  const parsed = found.schema ? found.schema.parse(props) : props;
+  return await found.query?.(db, parsed);
+}
+
+async function showBlockForm(schema: BlockRegister["schema"]) {
+  // TODO: validate answers
+  const props: any = {};
+
+  const shape = (schema as z.ZodObject<any, any, any>).shape;
+
+  for (const [fieldName, field] of Object.entries(shape)) {
+    if (field instanceof z.ZodString) {
+      const { value } = await prompt<{ value: string }>({
+        type: "input",
+        name: "value",
+        message: `Enter value for ${fieldName} (string):`
+      });
+      props[fieldName] = value;
+    } else if (field instanceof z.ZodNumber) {
+      const { value } = await prompt<{ value: number }>({
+        type: "input",
+        name: "value",
+        message: `Enter value for ${fieldName} (number):`,
+        validate: (input) => !isNaN(Number(input)) || "Please enter a valid number"
+      });
+      props[fieldName] = Number(value);
+    } else if (field instanceof z.ZodBoolean) {
+      const { value } = await prompt<{ value: string }>({
+        type: "select",
+        name: "value",
+        message: `Select value for ${fieldName} (boolean):`,
+        choices: [
+          { name: "true" },
+          { name: "false" },
+        ]
+      });
+      props[fieldName] = value === "true" ? true : false;
+    } else if (field instanceof z.ZodArray) {
+      // Handle array fields by prompting for values one-by-one or using a special input format
+      const { value } = await prompt<{ value: string }>({
+        type: "input",
+        name: "value",
+        message: `Enter values for ${fieldName} (comma separated):`
+      });
+      props[fieldName] = value.split(",").map(item => item.trim());
+    } else if (field instanceof z.ZodEnum) {
+      const choices = field.options.map((option: any) => ({
+        name: option,
+        value: option
+      }));
+      const { value } = await prompt<{ value: string }>({
+        type: "select",
+        name: "value",
+        message: `Select value for ${fieldName} (enum):`,
+        choices
+      });
+      props[fieldName] = value;
+    }
+    // TODO: Add cases for other types as needed
+  }
+
+  return props;
+}
+
+function renderResult(result: Record<string, any>[]) {
+  // TODO: paginate
+  // TODO: add column filters
+  // TODO: add column actions (copy, delete, etc.)
+  
+  if (result.length === 0) {
+    console.log("No results found.");
+    return;
+  }
+  
+  console.table(result)
+}
+
+async function showBlock(block: BlockRegister, lastProps?: any) {
+  const props = lastProps ?? (block.schema ? await showBlockForm(block.schema) : {})
+
+  try {
+    const result = await runBlockByName(block.name, props);
+    renderResult(result);
+  } catch (err) {
+    console.error("❌ Error running block:", err);
+  }
+
+  console.log("")
+
+  const { action } = await prompt<{ action: string }>({
+    type: "select",
+    name: "action",
+    message: "What do you want to do next?",
+    choices: [
+      { name: "Re-run" },
+      { name: "Re-run from scratch" },
+      { name: "Menu" },
+      { name: "Exit" }
+    ]
+  });
+
+  if (action === "Re-run") {
+    return showBlock(block, props);
+  } else if (action === "Re-run from scratch") {
+    return showBlock(block)
+  } else if (action === "Menu") {
+    return showBlocks(getBlocks());
+  } else {
+    console.log("Exiting...");
+    process.exit(0);
+  }
+}
+
+async function showBlocks(blocks: BlockRegister[]) {
+  const { blockName } = await prompt<{ blockName: string }>({
+    type: "select",
+    name: "blockName",
+    message: "Select a block to run",
+    choices: blocks.map(b => ({ name: b.name }))
+  });
+
+  const block = blocks.find(b => b.name === blockName)!;
+  showBlock(block);
+}
+
+async function main() {
+  await loadBlocks();
+
+  const blocks = getBlocks();
+
+  if (blocks.length === 0) {
+    console.log("No blocks found.");
+    return;
+  }
+
+  console.log("Blocks loaded:", blocks.length, "\n");
+
+  showBlocks(blocks)
+}
+
+main();
