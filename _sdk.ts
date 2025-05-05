@@ -10,6 +10,7 @@ import fs from "node:fs";
 
 declare global {
   interface Register {
+
   }
 }
 
@@ -38,7 +39,7 @@ export type ResolvedConfig = Required<Config> & {
 let resolvedConfig: ResolvedConfig
 
 export function getConfig() {
-  if(!resolvedConfig) {
+  if (!resolvedConfig) {
     resolvedConfig = DEFAULT_CONFIG;
     return resolvedConfig
   }
@@ -51,18 +52,18 @@ function getResolvedConfig(config?: Config) {
   const resolveSource = (source?: Pattern | Pattern[] | ((defaultSource: Pattern[]) => Pattern[])) => {
     // TODO: validate if source is string or array of strings, but it is checked automatically by fast-glob
 
-    if(typeof config.source === "function") {
+    if (typeof config.source === "function") {
       return config.source(DEFAULT_CONFIG.source)
     }
 
-    if(Array.isArray(config.source)) {
+    if (Array.isArray(config.source)) {
       return config.source
     }
 
-    if(!config.source) {
+    if (!config.source) {
       return DEFAULT_CONFIG.source
     }
-    
+
     return [config.source]
   }
 

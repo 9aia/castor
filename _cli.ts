@@ -20,16 +20,12 @@ const { prompt } = enquirer;
 // TODO: add support for folders and list files
 // TODO: add AI for executing blocks using natural language and prompting for input
 
+// FIXME: UnhandledPromiseRejection
+// TODO: add linter
+
 // #region Db
 
-const { env } = await wrangler.getPlatformProxy<Env>({ persist: true });
-const db = drizzle(env.DB, { schema })
-
-declare global {
-  interface Register {
-    database: typeof db;
-  }
-}
+let db: unknown;
 
 // #endregion
 
@@ -37,7 +33,7 @@ export async function runBlockByName(name: string, input: unknown) {
   const found = registry.find(b => b.name === name);
   if (!found) throw new Error(`Block "${name}" not found.`);
   const parsed = found.schema ? found.schema.parse(input) : input;
-  return await found.query?.(db, parsed);
+  return await found.query?.(db as any, parsed);
 }
 
 async function promptField(fieldName: string, field: unknown) {
@@ -150,7 +146,7 @@ async function showBlock(block: BlockRegister, lastInput?: any) {
     const result = await runBlockByName(block.name, input);
     renderResult(result);
   } catch (err) {
-    console.error("❌ Error running block:", err);
+    console.error("❌ Error running block: \n\n", err);
   }
 
   console.log("")
@@ -198,26 +194,35 @@ function validateConfigPath(filePath: string | undefined) {
 }
 
 async function main() {
-  const configIndex = process.argv.indexOf('--config');
-  const configPath = configIndex !== -1 ? process.argv[configIndex + 1] : undefined;
+  try {
+    const configIndex = process.argv.indexOf('--config');
+    const configPath = configIndex !== -1 ? process.argv[configIndex + 1] : undefined;
 
-  validateConfigPath(configPath);
+    validateConfigPath(configPath);
 
-  console.log("🦫  Castor DB Client", "\n") 
+    console.log("🦫  Castor DB Client", "\n")
 
-  await loadConfig(configPath);
-  await loadSessions();
+    const { env } = await wrangler.getPlatformProxy<Env>({ persist: true });
+    db = drizzle(env.DB, { schema })
 
-  const blocks = getBlocks();
+    await loadConfig(configPath);
+    await loadSessions();
 
-  if (blocks.length === 0) {
-    console.log("No session found.");
-    return;
+    const blocks = getBlocks();
+
+    if (blocks.length === 0) {
+      console.log("No session found.");
+      return;
+    }
+
+    console.log("Blocks loaded:", blocks.length, "\n");
+
+    showBlocks(blocks)
+  } catch (err) {
+    console.error("❌ Error:\n\n", err);
+    process.exit(1);
   }
-
-  console.log("Blocks loaded:", blocks.length, "\n");
-
-  showBlocks(blocks)
 }
 
-main();
+main()
+
