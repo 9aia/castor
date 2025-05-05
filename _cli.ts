@@ -5,31 +5,32 @@ import wrangler from "wrangler";
 import { z } from "zod";
 import { BlockRegister, getBlocks, loadBlocks, registry } from "./_sdk";
 
-// Notes
+// NOTE:
 // 1. How to allow for copying response columns?
 // 2. How to allow for copying response rows?
 // 3. How to allow for copying response cells?
 
+// TODO: add config (how recent the blocks are considered recent, session directory path)
+// TODO: add recently added blocks
 // TODO: add AI for block execution with natural language
-// TODO: add support for folders
-// TODO: add danger block (ask for confirmation before running)
+// TODO: add support for folders and list files
+// TODO: fix not autorized queries
 // TODO: experiment registering blocks without exports (using inner register call in `defineBlock()`)
 
 const { default: enquirer } = await import('enquirer');
 const { prompt } = enquirer;
-
-declare global {
-  namespace DBMS {
-    type Database = typeof db;
-  }
-}
 
 // #region Db
 
 const { env } = await wrangler.getPlatformProxy<Env>({ persist: true });
 
 export const db = drizzle(env.DB, { schema })
-export type Database = typeof db;
+
+declare global {
+  interface Register {
+    database: typeof db;
+  }
+}
 
 // #endregion
 
@@ -131,6 +132,20 @@ function renderResult(result: Record<string, any>[]) {
 
 async function showBlock(block: BlockRegister, lastInput?: any) {
   const input = lastInput ?? (block.schema ? await showBlockForm(block.schema) : {})
+
+  if (block.danger) {
+    const { confirm } = await prompt<{ confirm: boolean }>({
+      type: "confirm",
+      name: "confirm",
+      message: `Are you sure you want to run this block?`,
+      initial: false
+    });
+
+    if (!confirm) {
+      console.log("Block execution cancelled.");
+      return showBlocks(getBlocks());
+    }
+  }
 
   try {
     const result = await runBlockByName(block.name, input);

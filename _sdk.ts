@@ -6,13 +6,21 @@ import fg from "fast-glob";
 
 // TODO: improve schema types (must be aligned with the form creator ability)
 
+declare global {
+  interface Register {
+  }
+}
+
+export type Database = Register['database'];
+
 // #region Blocks
 
 export type Block<T extends z.ZodType = any> = {
   name: string,
   description?: string,
+  danger?: boolean
   schema?: T
-  query: (db: DBMS.Database, input: z.infer<T>) => Promise<any> | any
+  query: (db: Database, input: z.infer<T>) => Promise<any> | any
 }
 
 export function block<T extends z.ZodType>(
