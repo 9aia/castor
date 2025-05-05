@@ -2,7 +2,9 @@
 import { z } from "zod";
 export * from "drizzle-orm";
 export { z } from "zod";
-import fg from "fast-glob";
+import fg, { Pattern } from "fast-glob";
+import path from "node:path";
+import fs from "node:fs";
 
 // TODO: improve schema types (must be aligned with the form creator ability)
 
@@ -13,6 +15,81 @@ declare global {
 
 export type Database = Register['database'];
 
+// #region Config
+
+export type Config = {
+  rootDir?: string,
+  source?: Pattern | Pattern[] | ((defaultSource: Pattern[]) => Pattern[]),
+}
+
+export function defineConfig(config: Config) {
+  return config;
+}
+
+export const DEFAULT_CONFIG: ResolvedConfig = {
+  rootDir: "./db-client",
+  source: ["**/*.js", "**/*.ts", "!**/_*", "!**/.*"]
+}
+
+export type ResolvedConfig = Required<Config> & {
+  source: Pattern[]
+}
+
+let resolvedConfig: ResolvedConfig
+
+export function getConfig() {
+  if(!resolvedConfig) {
+    resolvedConfig = DEFAULT_CONFIG;
+    return resolvedConfig
+  }
+  return resolvedConfig;
+}
+
+function getResolvedConfig(config?: Config) {
+  if (!config) return DEFAULT_CONFIG;
+
+  const resolveSource = (source?: Pattern | Pattern[] | ((defaultSource: Pattern[]) => Pattern[])) => {
+    // TODO: validate if source is string or array of strings, but it is checked automatically by fast-glob
+
+    if(typeof config.source === "function") {
+      return config.source(DEFAULT_CONFIG.source)
+    }
+
+    if(Array.isArray(config.source)) {
+      return config.source
+    }
+
+    if(!config.source) {
+      return DEFAULT_CONFIG.source
+    }
+    
+    return [config.source]
+  }
+
+  return {
+    ...config,
+    rootDir: config.rootDir || DEFAULT_CONFIG.rootDir,
+    source: resolveSource(config.source),
+  }
+}
+
+export async function loadConfig(filePath?: string) {
+  if(filePath && !fs.existsSync(filePath)) {
+    throw new Error("Config file does not exist");
+  }
+
+  const configFile = path.resolve(process.cwd(), filePath || "castor.config.ts")
+
+  if (fs.existsSync(configFile)) {
+    const { default: config } = await import(configFile);
+    resolvedConfig = getResolvedConfig(config);
+  } else {
+    resolvedConfig = getResolvedConfig();
+  }
+}
+
+// #endregion
+
 // #region Blocks
 
 export type Block<T extends z.ZodType = any> = {
@@ -20,6 +97,7 @@ export type Block<T extends z.ZodType = any> = {
   description?: string,
   danger?: boolean
   schema?: T
+  file?: string
   query: (db: Database, input: z.infer<T>) => Promise<any> | any
 }
 
@@ -47,21 +125,22 @@ export type BlockRegister = Block & {
 
 export const registry: BlockRegister[] = [];
 
-export function registerBlock(config: Block) {
+export function registerBlock(config: Block, file?: string) {
   // TODO: validate config schema (can't include object values)
 
-  registry.push(config);
+  registry.push({ file: config.file || file, ...config });
 }
 
 export function getBlocks() {
   return [...registry];
 }
 
-// Load all dbms/**/*.ts blocks dynamically
 export async function loadBlocks() {
-  const files = await fg(["./dbms/**/*.ts", "!dbms/**/_*.ts", "!dbms/**/.*"], { absolute: true });
+  const config = getConfig();
+  const files = await fg(config.source, { absolute: true, cwd: config.rootDir });
 
   for (const file of files) {
+    console.log(file)
     await import(file);
   }
 }

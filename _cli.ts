@@ -3,14 +3,14 @@ import * as schema from "@/schema";
 import { drizzle } from "drizzle-orm/d1";
 import wrangler from "wrangler";
 import { z } from "zod";
-import { BlockRegister, getBlocks, loadBlocks, registry } from "./_sdk";
+import { BlockRegister, getBlocks, loadBlocks, loadConfig, registry } from "./_sdk";
 
 // NOTE:
 // 1. How to allow for copying response columns?
 // 2. How to allow for copying response rows?
 // 3. How to allow for copying response cells?
 
-// TODO: add config (how recent the blocks are considered recent, session directory path)
+// TODO: add config (how recent the blocks are considered recent)
 // TODO: add recently added blocks
 // TODO: add AI for block execution with natural language
 // TODO: add support for folders and list files
@@ -193,6 +193,10 @@ async function showBlocks(blocks: BlockRegister[]) {
 }
 
 async function main() {
+  const configIndex = process.argv.indexOf('--config');
+  const configPath = configIndex !== -1 ? process.argv[configIndex + 1] : undefined;
+
+  await loadConfig(configPath);
   await loadBlocks();
 
   const blocks = getBlocks();
