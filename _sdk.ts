@@ -74,16 +74,13 @@ function getResolvedConfig(config?: Config) {
 }
 
 export async function loadConfig(filePath?: string) {
-  if(filePath && !fs.existsSync(filePath)) {
-    throw new Error("Config file does not exist");
-  }
-
   const configFile = path.resolve(process.cwd(), filePath || "castor.config.ts")
 
   if (fs.existsSync(configFile)) {
     const { default: config } = await import(configFile);
     resolvedConfig = getResolvedConfig(config);
   } else {
+    console.warn(`Config file not found at \`${path.relative(process.cwd(), configFile)}\`. Using default config.`);
     resolvedConfig = getResolvedConfig();
   }
 }
@@ -135,12 +132,11 @@ export function getBlocks() {
   return [...registry];
 }
 
-export async function loadBlocks() {
+export async function loadSessions() {
   const config = getConfig();
   const files = await fg(config.source, { absolute: true, cwd: config.rootDir });
 
   for (const file of files) {
-    console.log(file)
     await import(file);
   }
 }

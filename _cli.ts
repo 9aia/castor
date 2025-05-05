@@ -3,28 +3,27 @@ import * as schema from "@/schema";
 import { drizzle } from "drizzle-orm/d1";
 import wrangler from "wrangler";
 import { z } from "zod";
-import { BlockRegister, getBlocks, loadBlocks, loadConfig, registry } from "./_sdk";
+import { BlockRegister, getBlocks, loadSessions, loadConfig, registry } from "./_sdk";
+import fs from "node:fs";
+const { default: enquirer } = await import('enquirer');
+const { prompt } = enquirer;
 
 // NOTE:
 // 1. How to allow for copying response columns?
 // 2. How to allow for copying response rows?
 // 3. How to allow for copying response cells?
 
-// TODO: add config (how recent the blocks are considered recent)
-// TODO: add recently added blocks
-// TODO: add AI for block execution with natural language
-// TODO: add support for folders and list files
 // TODO: fix not autorized queries
-// TODO: experiment registering blocks without exports (using inner register call in `defineBlock()`)
 
-const { default: enquirer } = await import('enquirer');
-const { prompt } = enquirer;
+// TODO: add recently added blocks
+// TODO: add config for how recent the blocks are considered recent
+// TODO: add support for folders and list files
+// TODO: add AI for executing blocks using natural language and prompting for input
 
 // #region Db
 
 const { env } = await wrangler.getPlatformProxy<Env>({ persist: true });
-
-export const db = drizzle(env.DB, { schema })
+const db = drizzle(env.DB, { schema })
 
 declare global {
   interface Register {
@@ -110,7 +109,7 @@ async function showBlockForm(schema: z.ZodType) {
   const input = await promptField("input", schema);
   const validation = schema.safeParse(input);
   if (!validation.success) {
-    // TODO: add better error handling with a menu (retry, go back to query, exit DBMS)
+    // TODO: add better error handling with a menu (retry, go back to query, exit Castor)
     console.error("❌ Error validating input:", validation.error.format());
     return showBlockForm(schema);
   }
@@ -192,17 +191,27 @@ async function showBlocks(blocks: BlockRegister[]) {
   showBlock(block);
 }
 
+function validateConfigPath(filePath: string | undefined) {
+  if (filePath && !fs.existsSync(filePath)) {
+    throw new Error("Config file does not exist");
+  }
+}
+
 async function main() {
   const configIndex = process.argv.indexOf('--config');
   const configPath = configIndex !== -1 ? process.argv[configIndex + 1] : undefined;
 
+  validateConfigPath(configPath);
+
+  console.log("🦫  Castor DB Client", "\n") 
+
   await loadConfig(configPath);
-  await loadBlocks();
+  await loadSessions();
 
   const blocks = getBlocks();
 
   if (blocks.length === 0) {
-    console.log("No blocks found.");
+    console.log("No session found.");
     return;
   }
 

@@ -1,5 +1,3 @@
-// dbms/player.ts
-
 import { players } from "@/schema";
 import { eq, z, block } from "./_sdk";
 
