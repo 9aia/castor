@@ -3,6 +3,8 @@ import { z } from "zod";
 import fg, { Pattern } from "fast-glob";
 import path from "node:path";
 import fs from "node:fs";
+import { db } from "~/middleware";
+import { GetPlatformProxyOptions } from "wrangler";
 
 export * from "drizzle-orm";
 export { z } from "zod";
@@ -22,6 +24,11 @@ export type Database = Register['database'];
 export type Config = {
   rootDir?: string,
   source?: Pattern | Pattern[] | ((defaultSource: Pattern[]) => Pattern[]),
+  dbProvider?: "d1" | (() => Promise<Database> | Database),
+  wrangler?: GetPlatformProxyOptions,
+  d1?: {
+    binding: string,
+  }
 }
 
 export function defineConfig(config: Config) {
@@ -30,7 +37,14 @@ export function defineConfig(config: Config) {
 
 export const DEFAULT_CONFIG: ResolvedConfig = {
   rootDir: "./db-client",
-  source: ["**/*.js", "**/*.ts", "!**/_*", "!**/.*"]
+  source: ["**/*.js", "**/*.ts", "!**/_*", "!**/.*"],
+  dbProvider: "d1",
+  wrangler: {
+    persist: true, 
+  },
+  d1: {
+    binding: "DB",
+  }
 }
 
 export type ResolvedConfig = Required<Config> & {
@@ -53,25 +67,45 @@ function getResolvedConfig(config?: Config) {
   const resolveSource = (source?: Pattern | Pattern[] | ((defaultSource: Pattern[]) => Pattern[])) => {
     // TODO: validate if source is string or array of strings, but it is checked automatically by fast-glob
 
-    if (typeof config.source === "function") {
-      return config.source(DEFAULT_CONFIG.source)
+    if (typeof source === "function") {
+      return source(DEFAULT_CONFIG.source)
     }
 
-    if (Array.isArray(config.source)) {
-      return config.source
+    if (Array.isArray(source)) {
+      return source
     }
 
-    if (!config.source) {
+    if (!source) {
       return DEFAULT_CONFIG.source
     }
 
-    return [config.source]
+    return [source]
+  }
+
+  const resolveWrangler = (wranglerConfig: Config['wrangler'] = DEFAULT_CONFIG.wrangler) => {
+    return {
+      ...DEFAULT_CONFIG.wrangler,
+      ...wranglerConfig,
+    };
+  };
+
+  const resolveD1 = (d1Config: Config['d1']) => {
+    const d1 = d1Config || DEFAULT_CONFIG.d1;
+  
+    if(!d1.binding) {
+      d1.binding = DEFAULT_CONFIG.d1.binding;
+    }
+
+    return d1
   }
 
   return {
     ...config,
     rootDir: config.rootDir || DEFAULT_CONFIG.rootDir,
     source: resolveSource(config.source),
+    dbProvider: config.dbProvider || DEFAULT_CONFIG.dbProvider,
+    wrangler: resolveWrangler(config.wrangler),
+    d1: resolveD1(config.d1),
   }
 }
 

@@ -3,7 +3,7 @@ import * as schema from "@/schema";
 import { drizzle } from "drizzle-orm/d1";
 import fs from "node:fs";
 import { z } from "zod";
-import { BlockRegister, getBlocks, loadConfig, loadSessions, Registry, Schema } from "./_sdk";
+import { BlockRegister, getBlocks, getConfig, loadConfig, loadSessions, Registry, Schema } from "./_sdk";
 const { default: enquirer } = await import('enquirer');
 const { prompt } = enquirer;
 
@@ -121,12 +121,12 @@ async function runBlock<S extends Schema | undefined>(block: BlockRegister<S>, i
   try {
     const parsedInput = block.schema ? block.schema.parse(input) : input;
 
-    if(block.query) {
+    if (block.query) {
       const result = await block.query?.(db as any, parsedInput);
       renderResult(result);
     }
-    
-    if(block.run) {
+
+    if (block.run) {
       await block.run?.(db as any, parsedInput);
       console.log("Block executed successfully.");
     }
@@ -198,6 +198,24 @@ function validateConfigPath(filePath: string | undefined) {
   }
 }
 
+async function loadDb() {
+  const config = getConfig();
+
+  if (config.dbProvider === "d1") {
+    const wrangler = await import("wrangler");
+    const { env } = await wrangler.getPlatformProxy<Env>(config.wrangler);
+    db = drizzle((env as any)[config.d1.binding], { schema })
+    return
+  }
+
+  if (typeof config.dbProvider === "function") {
+    db = config.dbProvider();
+    return
+  }
+
+  throw new Error("Invalid dbProvider. Expected 'd1' or a function that returns a database instance.");
+}
+
 async function main() {
   try {
     const configIndex = process.argv.indexOf('--config');
@@ -207,11 +225,8 @@ async function main() {
 
     console.log("🦫  Castor DB Client", "\n")
 
-    const wrangler = await import("wrangler");
-    const { env } = await wrangler.getPlatformProxy<Env>({ persist: true });
-    db = drizzle(env.DB, { schema })
-
     await loadConfig(configPath);
+    await loadDb()
     await loadSessions();
 
     const blocks = getBlocks();

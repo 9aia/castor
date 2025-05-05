@@ -25,7 +25,7 @@ block("Drop all database", {
 
     //Drop triggers
     const triggerResult = await db.run(
-      sql`SELECT name FROM sqlite_master WHERE type = 'trigger'`
+      sql`SELECT name FROM sqlite_master WHERE type = 'trigger' AND name NOT LIKE 'sqlite_%'`
     );
     const triggerNames = triggerResult.results.map((t: any) => t.name);
     for (const triggerName of triggerNames) {
