@@ -1,9 +1,8 @@
 
-import * as schema from "@/schema";
 import { drizzle } from "drizzle-orm/d1";
 import fs from "node:fs";
 import { z } from "zod";
-import { BlockRegister, getBlocks, getConfig, loadConfig, loadSessions, Registry, Schema } from "./_sdk";
+import { BlockRegister, getBlocks, getConfig, loadConfig, loadSessions, Registry, Schema } from "./src/sdk";
 const { default: enquirer } = await import('enquirer');
 const { prompt } = enquirer;
 
@@ -11,6 +10,8 @@ const { prompt } = enquirer;
 // 1. How to allow for copying response columns?
 // 2. How to allow for copying response rows?
 // 3. How to allow for copying response cells?
+
+// TODO: add a simple example into README
 
 // TODO: re-register block before run, and add memo() for preventing re-computation
 
@@ -214,7 +215,7 @@ async function loadDb() {
   if (config.dbProvider === "d1") {
     const wrangler = await import("wrangler");
     const { env } = await wrangler.getPlatformProxy<Env>(config.wrangler);
-    db = drizzle((env as any)[config.d1.binding], { schema })
+    db = drizzle((env as any)[config.d1.binding], config.drizzle)
     return
   }
 

@@ -1,10 +1,10 @@
 
-import { z } from "zod";
+import { DrizzleConfig } from "drizzle-orm";
 import fg, { Pattern } from "fast-glob";
-import path from "node:path";
 import fs from "node:fs";
-import { db } from "~/middleware";
+import path from "node:path";
 import { GetPlatformProxyOptions } from "wrangler";
+import { z } from "zod";
 
 export * from "drizzle-orm";
 export { z } from "zod";
@@ -24,6 +24,7 @@ export type Database = Register['database'];
 export type Config = {
   rootDir?: string,
   source?: Pattern | Pattern[] | ((defaultSource: Pattern[]) => Pattern[]),
+  drizzle?: DrizzleConfig,
   dbProvider?: "d1" | (() => Promise<Database> | Database),
   wrangler?: GetPlatformProxyOptions,
   d1?: {
@@ -47,16 +48,23 @@ export const DEFAULT_CONFIG: ResolvedConfig = {
   }
 }
 
-export type ResolvedConfig = Required<Config> & {
+export type ResolvedConfig = {
+  rootDir: string,
   source: Pattern[]
+  drizzle?: Config['drizzle']
+  dbProvider: "d1" | (() => Promise<Database> | Database),
+  wrangler: GetPlatformProxyOptions,
+  d1: {
+    binding: string,
+  },
 }
 
 let resolvedConfig: ResolvedConfig
 
-export function getConfig() {
+export function getConfig(): ResolvedConfig {
   if (!resolvedConfig) {
     resolvedConfig = DEFAULT_CONFIG;
-    return resolvedConfig
+    return resolvedConfig;
   }
   return resolvedConfig;
 }
