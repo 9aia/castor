@@ -2,8 +2,11 @@
 import * as schema from "@/schema";
 import { drizzle } from "drizzle-orm/d1";
 import wrangler from "wrangler";
-import { UnknownKeysParam, z, ZodRawShape, ZodTypeAny } from "zod";
+import { z } from "zod";
+export * from "drizzle-orm";
 export { z } from "zod";
+
+// TODO: improve schema types (must be aligned with the form creator ability)
 
 // #region Db
 
@@ -16,20 +19,20 @@ export type Database = typeof db;
 
 // #region Blocks
 
-export type BlockConfig<T extends z.ZodObject<A, B, C> = any, A extends ZodRawShape = any, B extends UnknownKeysParam = any, C extends ZodTypeAny = any> = {
+export type BlockConfig<T extends z.ZodType = any> = {
   schema?: T
-  query: (db: Database, props: z.infer<T>) => Promise<any> | any
+  query: (db: Database, input: z.infer<T>) => Promise<any> | any
 }
 
-export function defineBlock<T extends z.ZodObject<A, B, C>, A extends ZodRawShape, B extends UnknownKeysParam, C extends ZodTypeAny>(
-  config: BlockConfig<T, A, B, C>
+export function defineBlock<T extends z.ZodType>(
+  config: BlockConfig<T>
 ) {
   return config;
 }
 
-export function isBlockConfig<T extends z.ZodObject<A, B, C>, A extends ZodRawShape, B extends UnknownKeysParam, C extends ZodTypeAny>(
+export function isBlockConfig<T extends z.ZodType>(
   val: any
-): val is BlockConfig<T, A, B, C> {
+): val is BlockConfig<T> {
   return val && typeof val === "object" && "query" in val && typeof val.query === "function";
 }
 
