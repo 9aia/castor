@@ -18,8 +18,9 @@ const { prompt } = enquirer;
 // TODO: add config for how recent the blocks are considered recent
 // TODO: add support for folders and list files
 // TODO: add AI for executing blocks using natural language and prompting for input
-
 // TODO: add linter
+// TODO: refactor to @inquirer/prompts
+
 // TODO: experiment dependable blocks
 
 // #region Db
@@ -156,25 +157,34 @@ async function showBlock<S extends Schema | undefined>(block: BlockRegister<S>, 
 
   console.log("")
 
+  let choices = [
+    { name: "Re-run (same input)", value: "RERUN_SAME" },
+    { name: "Re-run (new input)", value: "RERUN_NEW" },
+    { name: "Main menu", value: "MENU" },
+    { name: "Exit", value: "EXIT" }
+  ]
+
+  if (!block.schema) {
+    choices = [
+      { name: "Re-run", value: "RERUN_SAME" },
+      { name: "Main menu", value: "MENU" },
+      { name: "Exit", value: "EXIT" }
+    ]
+  }
   const { action } = await prompt<{ action: string }>({
     type: "select",
     name: "action",
-    message: "What do you want to do next?",
-    choices: [
-      { name: "Re-run" },
-      { name: "Re-run from scratch" },
-      { name: "Menu" },
-      { name: "Exit" }
-    ]
+    message: "Choose an action:",
+    choices,
   });
 
-  if (action === "Re-run") {
+  if (action === "Re-run (same input)" || action === "Re-run") {
     return await showBlock(block, input);
-  } else if (action === "Re-run from scratch") {
+  } else if (action === "Re-run (new input)") {
     return await showBlock(block)
-  } else if (action === "Menu") {
+  } else if (action === "Main menu") {
     return await showBlocks(getBlocks());
-  } else {
+  } else if (action === "Exit") {
     console.log("Exiting...");
     process.exit(0);
   }
