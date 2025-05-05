@@ -1,20 +1,20 @@
 // dbms/player.ts
 
 import { players } from "@/schema";
-import { eq, z, defineBlock } from "./_sdk";
+import { eq, z, block } from "./_sdk";
 
-export const listAllPlayers = defineBlock({
+block("List all players", {
   query: db => db.select().from(players)
 })
 
-export const listReadyPlayers = defineBlock({
-  schema: z.array(z.string()),
+block("List players by ready status", {
+  schema: z.boolean(),
   query: (db, input) => (
     db.select().from(players).where(eq(players.ready, input))
   )
 })
 
-export const getPlayerById = defineBlock({
+block("Get player by id", {
   schema: z.object({ id: z.string() }),
   query: (db, input) => (
     db.select().from(players).where(eq(players.id, input.id))

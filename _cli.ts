@@ -1,7 +1,9 @@
 
+import * as schema from "@/schema";
+import { drizzle } from "drizzle-orm/d1";
+import wrangler from "wrangler";
 import { z } from "zod";
-import { BlockConfig, db, isBlockConfig } from "./_sdk";
-import fg from "fast-glob";
+import { BlockRegister, getBlocks, loadBlocks, registry } from "./_sdk";
 
 // Notes
 // 1. How to allow for copying response columns?
@@ -16,39 +18,18 @@ import fg from "fast-glob";
 const { default: enquirer } = await import('enquirer');
 const { prompt } = enquirer;
 
-// #region Registry
-
-export type BlockRegister = BlockConfig & {
-  name: string
-}
-
-const registry: BlockRegister[] = [];
-
-export function registerBlock(name: string, config: BlockConfig) {
-  // TODO: validate config schema (can't include object values)
-
-  registry.push({ name, ...config });
-}
-
-export function getBlocks() {
-  return [...registry];
-}
-
-// Load all dbms/**/*.ts blocks dynamically
-export async function loadBlocks() {
-  const files = await fg(["./dbms/**/*.ts", "!dbms/**/_*.ts", "!dbms/**/.*"], { absolute: true });
-
-  for (const file of files) {
-    const mod = await import(file);
-    const exports = Object.entries(mod);
-
-    for (const [name, value] of exports) {
-      if (isBlockConfig(value)) {
-        registerBlock(name, value);
-      }
-    }
+declare global {
+  namespace DBMS {
+    type Database = typeof db;
   }
 }
+
+// #region Db
+
+const { env } = await wrangler.getPlatformProxy<Env>({ persist: true });
+
+export const db = drizzle(env.DB, { schema })
+export type Database = typeof db;
 
 // #endregion
 
@@ -112,7 +93,7 @@ async function promptField(fieldName: string, field: unknown) {
 
 async function showBlockForm(schema: z.ZodType) {
   // TODO: add validation for each field using the schema
-  
+
   if (schema instanceof z.ZodObject) {
     const input: any = {};
     const shape = (schema as z.ZodObject<any, any, any>).shape;
