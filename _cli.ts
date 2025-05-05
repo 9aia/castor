@@ -2,7 +2,6 @@
 import * as schema from "@/schema";
 import { drizzle } from "drizzle-orm/d1";
 import fs from "node:fs";
-import wrangler from "wrangler";
 import { z } from "zod";
 import { BlockRegister, getBlocks, loadConfig, loadSessions, Registry, Schema } from "./_sdk";
 const { default: enquirer } = await import('enquirer');
@@ -13,7 +12,7 @@ const { prompt } = enquirer;
 // 2. How to allow for copying response rows?
 // 3. How to allow for copying response cells?
 
-// TODO: fix not autorized queries
+// TODO: re-register block before run, and add memo() for preventing re-computation
 
 // TODO: add recently added blocks
 // TODO: add config for how recent the blocks are considered recent
@@ -208,6 +207,7 @@ async function main() {
 
     console.log("🦫  Castor DB Client", "\n")
 
+    const wrangler = await import("wrangler");
     const { env } = await wrangler.getPlatformProxy<Env>({ persist: true });
     db = drizzle(env.DB, { schema })
 
