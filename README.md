@@ -45,7 +45,7 @@ Castor enables you to:
 To install Castor, use NPM:
 
 ```bash
-npm install @9aia/castor
+npm install -D @9aia/castor
 ```
 
 Or with other package managers like PNPM or Yarn!
@@ -93,6 +93,7 @@ Create files in `db-client/`, like `user.ts`, and export your query blocks there
 Blocks are typed and named operations. They can query or mutate your database:
 
 ```ts
+// ./db-client/user.ts
 import { users } from "~/db/schema";
 
 block("List all users", {

@@ -3,17 +3,21 @@
   "version": "0.0.0",
   "description": "CLI tool to connect, explore, and query SQL databases using JavaScript-defined blocks.",
   "type": "module",
-  "main": "dist/src/sdk.js",
-  "types": "dist/types/src/sdk.d.ts",
+  "module": "./dist/castor-sdk.es.js",
+  "types": "./dist/src/sdk.d.ts",
   "exports": {
-    ".": "./dist/src/sdk.js"
+    ".": {
+      "import": "./dist/castor-sdk.es.js",
+      "types": "./dist/src/sdk.d.ts"
+    }
   },
   "bin": {
-    "castor": "./dist/main.js"
+    "castor": "./dist/castor-cli.es.js"
   },
   "scripts": {
-    "build": "tsc",
-    "pack": "pnpm run build && pnpm pack"
+    "build": "tsc && vite build",
+    "link": "pnpm build && pnpm link --global",
+    "pack": "pnpm build && pnpm pack"
   },
   "keywords": [
     "cli",
@@ -40,9 +44,13 @@
   "devDependencies": {
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vite-plugin-dts": "^4.5.3",
     "wrangler": "^4.14.1"
   },
   "dependencies": {
+    "@9aia/castor": "link:../../../../.local/share/pnpm/global/5/node_modules/@9aia/castor",
+    "castor": "link:../../../../.local/share/pnpm/global/5/node_modules/@9aia/castor",
     "drizzle-orm": "^0.43.1",
     "enquirer": "^2.4.1",
     "fast-glob": "^3.3.3",
@@ -51,5 +59,10 @@
   "peerDependencies": {
     "drizzle-orm": "^0.43.1",
     "zod": "^3.24.4"
+  },
+  "pnpm": {
+    "overrides": {
+      "castor": "link:../../../../.local/share/pnpm/global/5/node_modules/@9aia/castor"
+    }
   }
 }

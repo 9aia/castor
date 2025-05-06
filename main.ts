@@ -3,7 +3,7 @@
 import { drizzle } from "drizzle-orm/d1";
 import fs from "node:fs";
 import { z } from "zod";
-import { BlockRegister, getBlocks, getConfig, loadConfig, loadSessions, Registry, Schema } from "./src/sdk";
+import { BlockRegister, getBlocks, getConfig, loadConfig, loadSessions, Registry, Schema } from "~/sdk";
 const { default: enquirer } = await import('enquirer');
 const { prompt } = enquirer;
 
@@ -247,6 +247,7 @@ async function main() {
 
     if (blocks.length === 0) {
       console.log("No session found.");
+      process.exit(0);
       return;
     }
 
