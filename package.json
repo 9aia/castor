@@ -1,0 +1,35 @@
+{
+  "name": "@9aia/castor",
+  "version": "0.0.0",
+  "description": "CLI tool to connect, explore, and query SQL databases using JavaScript-defined blocks.",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cli",
+    "database",
+    "d1",
+    "cloudflare",
+    "developer-tool",
+    "open-source"
+  ],
+  "author": "Luis Emidio",
+  "license": "MIT",
+  "devDependencies": {
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.14.1"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.43.1",
+    "enquirer": "^2.4.1",
+    "fast-glob": "^3.3.3",
+    "zod": "^3.24.4"
+  },
+  "peerDependencies": {
+    "drizzle-orm": "^0.43.1",
+    "zod": "^3.24.4"
+  }
+}

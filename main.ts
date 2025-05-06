@@ -11,6 +11,8 @@ const { prompt } = enquirer;
 // 2. How to allow for copying response rows?
 // 3. How to allow for copying response cells?
 
+// NOTE: add a way to explore tables, procedures and more?
+
 // TODO: add a simple example into README
 
 // TODO: re-register block before run, and add memo() for preventing re-computation
