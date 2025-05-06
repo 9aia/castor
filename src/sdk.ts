@@ -11,13 +11,18 @@ export { z } from "zod";
 // TODO: improve schema types (must be aligned with the form creator ability)
 
 declare global {
-  interface Register {
-
+  namespace Castor {
+    interface Register {
+  
+    }
   }
+
+  var __castorRegistry: BlockRegister<any>[]
+  var __castorDb: Database
 }
 
 // @ts-ignore
-export type Database = Register['database'];
+export type Database = Castor.Register['database'];
 
 // #region Config
 
@@ -152,6 +157,7 @@ export function block<S extends Schema | undefined = undefined>(
   name: string,
   config: Omit<Block<S>, "name">
 ) {
+  console.log(name)
   registerBlock({ name, ...config as any });
   return config;
 }
@@ -172,16 +178,17 @@ export type BlockRegister<S extends Schema | undefined> = Block<S> & {
 
 export type Registry<S extends Schema | undefined> = BlockRegister<S>[]
 
-const registry: BlockRegister<any>[] = [];
+if(!globalThis.__castorRegistry) {
+  globalThis.__castorRegistry = [];
+}
 
 export function registerBlock<S extends Schema | undefined>(config: Block<S>, file?: string) {
   // TODO: validate config schema (can't include object values)
-
-  registry.push({ file: config.file || file, ...config });
+  globalThis.__castorRegistry.push({ file: config.file || file, ...config });
 }
 
 export function getBlocks<S extends Schema | undefined>() {
-  return [...registry] as Registry<S>;
+  return [...globalThis.__castorRegistry] as Registry<S>;
 }
 
 export async function loadSessions() {

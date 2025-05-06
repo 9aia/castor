@@ -7,11 +7,11 @@ export default defineConfig({
         target: 'esnext',
         lib: {
             entry: {
-                'sdk': path.resolve(__dirname, 'src/sdk.ts'),
-                'cli': path.resolve(__dirname, 'main.ts'),
+                'castor-sdk': path.resolve(__dirname, 'src/sdk.ts'),
+                'castor-cli': path.resolve(__dirname, 'main.ts'),
             },
             name: 'Castor',
-            fileName: (format, entryName) => `castor-${entryName}.${format}.js`,
+            fileName: (format, entryName) => `${entryName}.${format}.js`,
             formats: ['es'],
         },
         outDir: 'dist',
@@ -32,5 +32,7 @@ export default defineConfig({
             '~': path.resolve(__dirname, 'src'),
         },
     },
-    plugins: [dts()]
+    plugins: [dts({
+        rollupTypes: true,
+    })]
 });

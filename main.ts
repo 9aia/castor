@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { drizzle } from "drizzle-orm/d1";
 import fs from "node:fs";
 import { z } from "zod";
