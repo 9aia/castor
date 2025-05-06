@@ -1,18 +1,18 @@
 {
-	"type": "module",
-	"scripts": {
-		"install-castor": "pnpm add -D ../..",
-		"remove-castor": "pnpm remove @9aia/castor",
-		"db:generate": "drizzle-kit generate",
-		"db:migrate": "wrangler d1 migrations apply castor-simple-example --local",
-		"db:cli": "castor"
-	},
-	"devDependencies": {
-		"@9aia/castor": "link:../..",
-		"drizzle-kit": "^0.31.1",
-		"wrangler": "^4.14.1"
-	},
-	"dependencies": {
-		"drizzle-orm": "^0.43.1"
-	}
+  "type": "module",
+  "scripts": {
+    "install-castor": "pnpm add -D ../..",
+    "remove-castor": "pnpm remove @9aia/castor",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "wrangler d1 migrations apply castor-simple-example --local",
+    "db:cli": "castor"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.43.1"
+  },
+  "devDependencies": {
+    "@9aia/castor": "link:../..",
+    "drizzle-kit": "^0.31.1",
+    "wrangler": "^4.14.1"
+  }
 }

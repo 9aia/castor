@@ -59,23 +59,23 @@ Or with other package managers like PNPM or Yarn!
 You can define your own config file using `defineConfig()`:
 
 ```ts
-//castor.config.ts
-import { defineConfig } from "./src/sdk";
+// castor.config.ts
+import { defineConfig } from './src/sdk'
 
 export default defineConfig({
-  rootDir: "./db-client", // the directory Castor will explore
-  source: defaultSource => [...defaultSource, "!**.md"], // exclude MD files
+  rootDir: './db-client', // the directory Castor will explore
+  source: defaultSource => [...defaultSource, '!**.md'], // exclude MD files
   drizzle: { // DrizzleOptions
     logger: true,
   },
-  dbProvider: "d1", 
+  dbProvider: 'd1',
   d1: {
-    binding: "DB",
+    binding: 'DB',
   },
   wrangler: { // GetPlatformProxyOptions
     persist: true,
   },
-});
+})
 ```
 
 Supports:
@@ -94,39 +94,39 @@ Blocks are typed and named operations. They can query or mutate your database:
 
 ```ts
 // ./db-client/user.ts
-import { users } from "~/db/schema";
+import { users } from '~/db/schema'
 
-block("List all users", {
+block('List all users', {
   query: db => db.select().from(users)
 })
 
-block("Get user by id", {
+block('Get user by id', {
   schema: z.object({ id: z.string() }),
   query: (db, input) => (
     db.select().from(users).where(eq(users.id, input.id))
   ),
-});
+})
 
-block("Delete all users", {
+block('Delete all users', {
   danger: true, // will ask for confirmation
   query: (db, input) => (
     db.delete(users)
   ),
-});
+})
 ```
 
 Block signature:
 
 ```ts
-type Block<S extends Schema | undefined = undefined> = {
+interface Block<S extends Schema | undefined = undefined> {
   // Mark block as destructive (will ask for confirmation)
-  danger?: boolean,
-  / Zod schema for validating input
-  schema?: S,
+  danger?: boolean
+  // Zod schema for validating input
+  schema?: S
   // Async function to return or mutate data
-  query?: (db: Database, input: CheckUndefined<S, undefined, z.infer<WithoutUndefined<S>>>) => Promise<any> | any,
+  query?: (db: Database, input: CheckUndefined<S, undefined, z.infer<WithoutUndefined<S>>>) => Promise<any> | any
   // Async function for operations with side-effects
-  run?: (db: Database, input: CheckUndefined<S, undefined, z.infer<WithoutUndefined<S>>>) => Promise<any> | any,
+  run?: (db: Database, input: CheckUndefined<S, undefined, z.infer<WithoutUndefined<S>>>) => Promise<any> | any
 }
 ```
 
@@ -176,8 +176,6 @@ It connects to a database (D1 or custom), prompts the user for any necessary inp
 ## Developing
 
 ### Requirements
-
-
 
 ## FAQ
 

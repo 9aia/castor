@@ -1,85 +1,87 @@
-import { DrizzleConfig } from "drizzle-orm";
-import fg, { Pattern } from "fast-glob";
-import fs from "node:fs";
-import path from "node:path";
-import { GetPlatformProxyOptions } from "wrangler";
-import { z } from "zod";
+import type { DrizzleConfig } from 'drizzle-orm'
+import type { Pattern } from 'fast-glob'
+import type { GetPlatformProxyOptions } from 'wrangler'
+import type { z } from 'zod'
+import fs from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
+import fg from 'fast-glob'
 
-export * from "drizzle-orm";
-export { z } from "zod";
+export * from 'drizzle-orm'
+export { z } from 'zod'
 
 // TODO: improve schema types (must be aligned with the form creator ability)
 
 declare global {
+  var __castorRegistry: BlockRegister<any>[]
+
   namespace Castor {
     interface Register {
-  
+      database?: any
     }
   }
-
-  var __castorRegistry: BlockRegister<any>[]
 }
 
-// @ts-ignore
-export type Database = Castor.Register['database'];
+export type Database = Castor.Register['database']
 
 // #region Config
 
-export type Config = {
-  rootDir?: string,
-  source?: Pattern | Pattern[] | ((defaultSource: Pattern[]) => Pattern[]),
-  drizzle?: DrizzleConfig,
-  dbProvider?: "d1" | (() => Promise<Database> | Database),
-  wrangler?: GetPlatformProxyOptions,
+export interface Config {
+  rootDir?: string
+  source?: Pattern | Pattern[] | ((defaultSource: Pattern[]) => Pattern[])
+  drizzle?: DrizzleConfig
+  dbProvider?: 'd1' | (() => Promise<Database> | Database)
+  wrangler?: GetPlatformProxyOptions
   d1?: {
-    binding: string,
+    binding: string
   }
 }
 
 export function defineConfig(config: Config) {
-  return config;
+  return config
 }
 
 export const DEFAULT_CONFIG: ResolvedConfig = {
-  rootDir: "./db-client",
-  source: ["**/*.js", "**/*.ts", "!**/_*", "!**/.*"],
-  dbProvider: "d1",
+  rootDir: './db-client',
+  source: ['**/*.js', '**/*.ts', '!**/_*', '!**/.*'],
+  dbProvider: 'd1',
   wrangler: {
-    persist: true, 
+    persist: true,
   },
   d1: {
-    binding: "DB",
-  }
+    binding: 'DB',
+  },
 }
 
-export type ResolvedConfig = {
-  rootDir: string,
+export interface ResolvedConfig {
+  rootDir: string
   source: Pattern[]
   drizzle?: Config['drizzle']
-  dbProvider: "d1" | (() => Promise<Database> | Database),
-  wrangler: GetPlatformProxyOptions,
+  dbProvider: 'd1' | (() => Promise<Database> | Database)
+  wrangler: GetPlatformProxyOptions
   d1: {
-    binding: string,
-  },
+    binding: string
+  }
 }
 
 let resolvedConfig: ResolvedConfig
 
 export function getConfig(): ResolvedConfig {
   if (!resolvedConfig) {
-    resolvedConfig = DEFAULT_CONFIG;
-    return resolvedConfig;
+    resolvedConfig = DEFAULT_CONFIG
+    return resolvedConfig
   }
-  return resolvedConfig;
+  return resolvedConfig
 }
 
 function getResolvedConfig(config?: Config) {
-  if (!config) return DEFAULT_CONFIG;
+  if (!config)
+    return DEFAULT_CONFIG
 
   const resolveSource = (source?: Pattern | Pattern[] | ((defaultSource: Pattern[]) => Pattern[])) => {
     // TODO: validate if source is string or array of strings, but it is checked automatically by fast-glob
 
-    if (typeof source === "function") {
+    if (typeof source === 'function') {
       return source(DEFAULT_CONFIG.source)
     }
 
@@ -98,14 +100,14 @@ function getResolvedConfig(config?: Config) {
     return {
       ...DEFAULT_CONFIG.wrangler,
       ...wranglerConfig,
-    };
-  };
+    }
+  }
 
   const resolveD1 = (d1Config: Config['d1']) => {
-    const d1 = d1Config || DEFAULT_CONFIG.d1;
-  
-    if(!d1.binding) {
-      d1.binding = DEFAULT_CONFIG.d1.binding;
+    const d1 = d1Config || DEFAULT_CONFIG.d1
+
+    if (!d1.binding) {
+      d1.binding = DEFAULT_CONFIG.d1.binding
     }
 
     return d1
@@ -122,14 +124,15 @@ function getResolvedConfig(config?: Config) {
 }
 
 export async function loadConfig(filePath?: string) {
-  const configFile = path.resolve(process.cwd(), filePath || "castor.config.ts")
+  const configFile = path.resolve(process.cwd(), filePath || 'castor.config.ts')
 
   if (fs.existsSync(configFile)) {
-    const { default: config } = await import(configFile);
-    resolvedConfig = getResolvedConfig(config);
-  } else {
-    console.warn(`Config file not found at \`${path.relative(process.cwd(), configFile)}\`. Using default config.`);
-    resolvedConfig = getResolvedConfig();
+    const { default: config } = await import(configFile)
+    resolvedConfig = getResolvedConfig(config)
+  }
+  else {
+    console.warn(`Config file not found at \`${path.relative(process.cwd(), configFile)}\`. Using default config.`)
+    resolvedConfig = getResolvedConfig()
   }
 }
 
@@ -139,31 +142,31 @@ export async function loadConfig(filePath?: string) {
 
 export type Schema = z.ZodType
 
-type WithoutUndefined<T> = T extends undefined ? never : T;
-type CheckUndefined<T, V, F> = [T] extends [undefined] ? V : F;
+type WithoutUndefined<T> = T extends undefined ? never : T
+type CheckUndefined<T, V, F> = [T] extends [undefined] ? V : F
 
-export type Block<S extends Schema | undefined = undefined> = {
-  name: string,
-  description?: string,
-  danger?: boolean,
-  schema?: S,
-  file?: string,
-  query?: (db: Database, input: CheckUndefined<S, undefined, z.infer<WithoutUndefined<S>>>) => Promise<any> | any,
-  run?: (db: Database, input: CheckUndefined<S, undefined, z.infer<WithoutUndefined<S>>>) => Promise<any> | any,
+export interface Block<S extends Schema | undefined = undefined> {
+  name: string
+  description?: string
+  danger?: boolean
+  schema?: S
+  file?: string
+  query?: (db: Database, input: CheckUndefined<S, undefined, z.infer<WithoutUndefined<S>>>) => Promise<any> | any
+  run?: (db: Database, input: CheckUndefined<S, undefined, z.infer<WithoutUndefined<S>>>) => Promise<any> | any
 }
 
 export function block<S extends Schema | undefined = undefined>(
   name: string,
-  config: Omit<Block<S>, "name">
+  config: Omit<Block<S>, 'name'>,
 ) {
-  registerBlock({ name, ...config as any });
-  return config;
+  registerBlock({ name, ...config as any })
+  return config
 }
 
 export function isBlock<S extends Schema | undefined = undefined>(
-  val: any
+  val: any,
 ): val is Block<S> {
-  return val && typeof val === "object" && "query" in val && typeof val.query === "function";
+  return val && typeof val === 'object' && 'query' in val && typeof val.query === 'function'
 }
 
 // #endregion
@@ -176,25 +179,25 @@ export type BlockRegister<S extends Schema | undefined> = Block<S> & {
 
 export type Registry<S extends Schema | undefined> = BlockRegister<S>[]
 
-if(!globalThis.__castorRegistry) {
-  globalThis.__castorRegistry = [];
+if (!globalThis.__castorRegistry) {
+  globalThis.__castorRegistry = []
 }
 
 export function registerBlock<S extends Schema | undefined>(config: Block<S>, file?: string) {
   // TODO: validate config schema (can't include object values)
-  globalThis.__castorRegistry.push({ file: config.file || file, ...config });
+  globalThis.__castorRegistry.push({ file: config.file || file, ...config })
 }
 
 export function getBlocks<S extends Schema | undefined>() {
-  return [...globalThis.__castorRegistry] as Registry<S>;
+  return [...globalThis.__castorRegistry] as Registry<S>
 }
 
 export async function loadSessions() {
-  const config = getConfig();
-  const files = await fg(config.source, { absolute: true, cwd: config.rootDir });
+  const config = getConfig()
+  const files = await fg(config.source, { absolute: true, cwd: config.rootDir })
 
   for (const file of files) {
-    await import(file);
+    await import(file)
   }
 }
 

@@ -1,32 +1,8 @@
 {
   "name": "@9aia/castor",
-  "version": "0.2.0",
-  "description": "CLI tool to connect, explore, and query SQL databases using JavaScript-defined blocks.",
   "type": "module",
-  "main": "dist/castor-cli.es.js",
-  "exports": {
-    ".": {
-      "import": "./dist/castor-sdk.es.js",
-      "types": "./dist/castor-sdk.d.ts"
-    }
-  },
-  "bin": {
-    "castor": "./dist/castor-bin.es.js"
-  },
-  "scripts": {
-    "build": "tsc && vite build",
-    "link": "pnpm build && pnpm link --global",
-    "unlink": "pnpm unlink --global",
-    "pack": "pnpm build && pnpm pack"
-  },
-  "keywords": [
-    "cli",
-    "database",
-    "d1",
-    "cloudflare",
-    "developer-tool",
-    "open-source"
-  ],
+  "version": "0.0.0",
+  "description": "CLI tool to connect, explore, and query SQL databases using JavaScript-defined blocks.",
   "author": "Luis Emidio",
   "license": "MIT",
   "homepage": "https://github.com/9aia/castor#readme",
@@ -37,22 +13,52 @@
   "bugs": {
     "url": "https://github.com/9aia/castor/issues"
   },
-  "files": [
-    "dist",
-    "CONTRIBUTING.md"
+  "keywords": [
+    "cli",
+    "database",
+    "d1",
+    "cloudflare",
+    "developer-tool",
+    "open-source"
   ],
-  "devDependencies": {
-    "@types/node": "^22.15.11",
-    "typescript": "^5.8.3",
-    "vite": "^6.3.5",
-    "vite-plugin-dts": "^4.5.3"
+  "exports": {
+    ".": {
+      "types": "./dist/castor-sdk.d.ts",
+      "import": "./dist/castor-sdk.es.js"
+    }
+  },
+  "main": "dist/castor-cli.es.js",
+  "bin": {
+    "castor": "./dist/castor-bin.es.js"
+  },
+  "files": [
+    "CONTRIBUTING.md",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && vite build",
+    "link": "pnpm build && pnpm link --global",
+    "unlink": "pnpm unlink --global",
+    "pack": "pnpm build && pnpm pack",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "release": "release-it"
   },
   "dependencies": {
-    "wrangler": "^4.14.1",
-    "tsx": "^4.19.4",
     "drizzle-orm": "^0.43.1",
     "enquirer": "^2.4.1",
     "fast-glob": "^3.3.3",
+    "tsx": "^4.19.4",
+    "wrangler": "^4.14.1",
     "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^4.12.1",
+    "@types/node": "^22.15.11",
+    "eslint": "^9.26.0",
+    "release-it": "^19.0.2",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vite-plugin-dts": "^4.5.3"
   }
 }

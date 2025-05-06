@@ -1,0 +1,22 @@
+{
+  "git": {
+    "commitMessage": "chore: release v${version}",
+    "tagAnnotation": "Release v${version}",
+    "tagName": "v@${version}"
+  },
+  "github": {
+    "draft": true,
+    "release": true,
+    "releaseName": "v${version}"
+  },
+  "npm": {
+    "publish": true
+  },
+  "hooks": {
+    "before:init": [
+      "pnpm run lint"
+    ],
+    "after:bump": "pnpm build",
+    "after:release": "echo Successfully released v${version} to ${repo.repository}."
+  }
+}
