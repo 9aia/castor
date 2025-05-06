@@ -113,6 +113,7 @@ async function showBlockForm(schema: z.ZodType) {
   const validation = schema.safeParse(input)
   if (!validation.success) {
     // TODO: add better error handling with a menu (retry, go back to query, exit Castor)
+    // FIXME: infinite loop
     console.error('❌ Error validating input:', validation.error.format())
     return await showBlockForm(schema)
   }

@@ -7,7 +7,7 @@ import path from 'node:path'
 import process from 'node:process'
 import fg from 'fast-glob'
 
-export * from 'drizzle-orm'
+export * from 'drizzle-orm' // TODO: don't export anything from drizzle-orm anymore
 export { z } from 'zod'
 
 // TODO: improve schema types (must be aligned with the form creator ability)
