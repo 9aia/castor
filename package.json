@@ -2,6 +2,10 @@
   "name": "@9aia/castor",
   "type": "module",
   "version": "0.0.0",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "CLI tool to connect, explore, and query SQL databases using JavaScript-defined blocks.",
   "author": "Luis Emidio",
   "license": "MIT",
@@ -29,7 +33,7 @@
   },
   "main": "dist/castor-cli.es.js",
   "bin": {
-    "castor": "./dist/castor-bin.es.js"
+    "castor": "dist/castor-bin.es.js"
   },
   "files": [
     "CONTRIBUTING.md",
