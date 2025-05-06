@@ -1,4 +1,3 @@
-
 import { DrizzleConfig } from "drizzle-orm";
 import fg, { Pattern } from "fast-glob";
 import fs from "node:fs";
@@ -17,6 +16,7 @@ declare global {
   }
 }
 
+// @ts-ignore
 export type Database = Register['database'];
 
 // #region Config

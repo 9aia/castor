@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 
 import { drizzle } from "drizzle-orm/d1";
 import fs from "node:fs";
@@ -216,7 +217,7 @@ async function loadDb() {
 
   if (config.dbProvider === "d1") {
     const wrangler = await import("wrangler");
-    const { env } = await wrangler.getPlatformProxy<Env>(config.wrangler);
+    const { env } = await wrangler.getPlatformProxy(config.wrangler);
     db = drizzle((env as any)[config.d1.binding], config.drizzle)
     return
   }

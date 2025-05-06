@@ -1,0 +1,30 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "declaration": true,
+        "declarationDir": "./dist/types", // output directory for types
+        "outDir": "./dist", // output directory for compiled JavaScript
+        "strict": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        "allowSyntheticDefaultImports": true,
+        "removeComments": true,
+        "baseUrl": ".",
+        "paths": {
+            "*": [
+                "node_modules/*"
+            ]
+        },
+        "typeRoots": [
+            "node_modules/@types",
+            "./src/types"
+        ]
+    },
+    "include": [
+        "src/**/*.ts",
+        "main.ts"
+    ]
+}

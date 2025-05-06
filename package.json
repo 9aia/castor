@@ -3,9 +3,17 @@
   "version": "0.0.0",
   "description": "CLI tool to connect, explore, and query SQL databases using JavaScript-defined blocks.",
   "type": "module",
-  "main": "index.js",
+  "main": "dist/src/sdk.js",
+  "types": "dist/types/src/sdk.d.ts",
+  "exports": {
+    ".": "./dist/src/sdk.js"
+  },
+  "bin": {
+    "castor": "./dist/main.js"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "pack": "pnpm run build && pnpm pack"
   },
   "keywords": [
     "cli",
@@ -17,6 +25,18 @@
   ],
   "author": "Luis Emidio",
   "license": "MIT",
+  "homepage": "https://github.com/9aia/castor#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/9aia/castor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/9aia/castor/issues"
+  },
+  "files": [
+    "dist",
+    "CONTRIBUTING.md"
+  ],
   "devDependencies": {
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",

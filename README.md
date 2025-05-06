@@ -2,7 +2,7 @@
 
 **Castor** is a free, open-source, dev-focused database management tool written in Node.js with TypeScript designed for the command line. Think of it as a minimal, scriptable SQL client — built from the ground up for developers who live in the terminal.
 
-It supports a wide range of databases — like MySQL, PostgreSQL, SQLite, Oracle, and MongoDB — but the current prototype focuses on [Cloudflare D1](https://developers.cloudflare.com/d1/) support.
+It supports a wide range of databases — like MySQL, PostgreSQL and SQLite — but the current prototype focuses on [Cloudflare D1](https://developers.cloudflare.com/d1/) support.
 
 > [!WARNING]
 > ⚗️ Experimental — This project is in early stages and under active development. Expect rough edges, missing features, and possibly fast iteration.
@@ -172,6 +172,12 @@ Each block can:
 
 It connects to a database (D1 or custom), prompts the user for any necessary input, and runs the logic.
 
+## Developing
+
+### Requirements
+
+
+
 ## FAQ
 
 **Q: What databases are supported?**
@@ -185,8 +191,9 @@ A: You're prompted for inputs (based on its schema), then Castor runs the logic 
 
 ## Contribute
 
-Got feedback, ideas, or just want to help shape Castor?
-Open an issue or send a PR. Contributions are welcome at any stage.
+Got feedback, ideas, or just want to help shape Castor? Open an issue or send a PR. Contributions are welcome at any stage.
+
+Check out the [contributing guide](./CONTRIBUTING.md) for details.
 
 ## Roadmap
 
