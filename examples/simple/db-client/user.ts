@@ -26,8 +26,7 @@ block("Insert a user", {
 
 block("Delete all users", {
   danger: true,
-  query: (db, input) => (
+  query: (db) => (
     db.delete(users).returning()
   ),
 });
-

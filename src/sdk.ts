@@ -18,7 +18,6 @@ declare global {
   }
 
   var __castorRegistry: BlockRegister<any>[]
-  var __castorDb: Database
 }
 
 // @ts-ignore
@@ -157,7 +156,6 @@ export function block<S extends Schema | undefined = undefined>(
   name: string,
   config: Omit<Block<S>, "name">
 ) {
-  console.log(name)
   registerBlock({ name, ...config as any });
   return config;
 }

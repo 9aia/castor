@@ -2,10 +2,10 @@
 	"type": "module",
 	"scripts": {
 		"install-castor": "pnpm add -D ../..",
-		"remove-castor": "pnpm remove ../..",
+		"remove-castor": "pnpm remove @9aia/castor",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "wrangler d1 migrations apply castor-simple-example --local",
-		"db:cli": "tsx ../../main.ts"
+		"db:cli": "castor"
 	},
 	"devDependencies": {
 		"@9aia/castor": "link:../..",

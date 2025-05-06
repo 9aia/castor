@@ -1,6 +1,6 @@
 {
   "name": "@9aia/castor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CLI tool to connect, explore, and query SQL databases using JavaScript-defined blocks.",
   "type": "module",
   "main": "dist/castor-cli.es.js",
@@ -9,6 +9,9 @@
       "import": "./dist/castor-sdk.es.js",
       "types": "./dist/castor-sdk.d.ts"
     }
+  },
+  "bin": {
+    "castor": "./dist/castor-bin.es.js"
   },
   "scripts": {
     "build": "tsc && vite build",
@@ -40,13 +43,13 @@
   ],
   "devDependencies": {
     "@types/node": "^22.15.11",
-    "tsx": "^4.19.4",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
-    "vite-plugin-dts": "^4.5.3",
-    "wrangler": "^4.14.1"
+    "vite-plugin-dts": "^4.5.3"
   },
   "dependencies": {
+    "wrangler": "^4.14.1",
+    "tsx": "^4.19.4",
     "drizzle-orm": "^0.43.1",
     "enquirer": "^2.4.1",
     "fast-glob": "^3.3.3",

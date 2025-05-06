@@ -1,7 +1,14 @@
 import { drizzle } from "drizzle-orm/d1";
 import fs from "node:fs";
 import { z } from "zod";
-import { BlockRegister, getBlocks, getConfig, loadConfig, loadSessions, Registry, Schema } from "~/sdk";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url"
+import type { BlockRegister, Registry, Schema } from "~/sdk";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const sdkPath = pathToFileURL(path.join(__dirname, "./castor-sdk.es.js")).href
+const { loadConfig, loadSessions, getBlocks, getConfig } = await import(sdkPath)
+
 const { default: enquirer } = await import('enquirer');
 const { prompt } = enquirer;
 

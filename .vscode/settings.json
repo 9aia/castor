@@ -1,4 +1,9 @@
 {
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.wrangler": true,
+    "**/dist": false,
+  },
     "explorer.fileNesting.enabled": true,
     "explorer.fileNesting.expand": false,
     "explorer.fileNesting.patterns": {

@@ -8,7 +8,8 @@ export default defineConfig({
         lib: {
             entry: {
                 'castor-sdk': path.resolve(__dirname, 'src/sdk.ts'),
-                'castor-cli': path.resolve(__dirname, 'main.ts'),
+                'castor-cli': path.resolve(__dirname, 'src/cli.ts'),
+                'castor-bin': path.resolve(__dirname, 'src/bin.js'),
             },
             name: 'Castor',
             fileName: (format, entryName) => `${entryName}.${format}.js`,
@@ -21,7 +22,9 @@ export default defineConfig({
                 'zod',
                 'fast-glob',
                 'node:fs',
+                'node:url',
                 'node:path',
+                'node:child_process',
                 'wrangler',
                 'enquirer',
             ],
