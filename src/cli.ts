@@ -25,6 +25,7 @@ const { prompt } = enquirer
 // TODO: re-register block before run, and add memo() for preventing re-computation
 
 // TODO: add recently added blocks
+// TODO: prune removed blocks from saved json
 // TODO: add config for how recent the blocks are considered recent
 // TODO: add support for folders and list files
 // TODO: add AI for executing blocks using natural language and prompting for input
