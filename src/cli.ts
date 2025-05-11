@@ -121,17 +121,19 @@ async function showBlockForm(schema: z.ZodType) {
   return input
 }
 
-function renderResult(result: Record<string, any>[]) {
+function renderResult(result: any) {
   // TODO: paginate
   // TODO: add column filters
   // TODO: add column actions (copy, delete, etc.)
 
-  if (result.length === 0) {
+  const resultArray = Array.isArray(result) ? result : [result]
+
+  if (resultArray.length === 0) {
     console.log('No results found.')
     return
   }
 
-  console.table(result)
+  console.table(resultArray)
 }
 
 async function runBlock<S extends Schema | undefined>(block: BlockRegister<S>, input: unknown) {
