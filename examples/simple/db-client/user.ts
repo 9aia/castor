@@ -1,5 +1,7 @@
-import { block, eq, z } from '@9aia/castor'
+import { block } from '@9aia/castor'
 import { users } from '../db/schema'
+import { z } from 'zod'
+import { eq } from 'drizzle-orm'
 
 block('List all users', {
   query: db => db.select().from(users),
