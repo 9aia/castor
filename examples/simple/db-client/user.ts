@@ -1,7 +1,7 @@
 import { block } from '@9aia/castor'
-import { users } from '../db/schema'
-import { z } from 'zod'
 import { eq } from 'drizzle-orm'
+import { z } from 'zod'
+import { users } from '../db/schema'
 
 block('List all users', {
   query: db => db.select().from(users),
@@ -39,6 +39,7 @@ block('Insert X users', {
     )
   ),
 })
+
 block('Delete all users', {
   danger: true,
   query: db => (

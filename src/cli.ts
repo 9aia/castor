@@ -154,7 +154,7 @@ async function showBlockForm(schema: z.ZodType, lastNamespace?: Namespace) {
 async function renderResult(result: any) {
   // TODO: add column filters
   // TODO: add column actions (copy, delete, edit, etc.)
-  
+
   const resultArray = Array.isArray(result) ? result : [result]
   // TODO: add page size config
   const PAGE_SIZE = 5 // Number of rows per page
@@ -265,7 +265,7 @@ async function runBlock<S extends Schema | undefined>(block: BlockRegister<S>, i
 async function showBlock<S extends Schema | undefined>(
   block: BlockRegister<S>,
   lastInput?: any,
-  lastNamespace?: Namespace
+  lastNamespace?: Namespace,
 ) {
   const input = lastInput ?? (block.schema ? await showBlockForm(block.schema, lastNamespace) : {})
 
@@ -287,13 +287,15 @@ async function showBlock<S extends Schema | undefined>(
 
   console.log('')
 
-  let choices = [
-    block.schema ? [
-      { name: 'Re-run (same input)', value: 'RERUN_SAME' },
-      { name: 'Re-run (new input)', value: 'RERUN_NEW' },
-    ] : [
-      { name: 'Re-run', value: 'RERUN_SAME' },
-    ],
+  const choices = [
+    block.schema
+      ? [
+          { name: 'Re-run (same input)', value: 'RERUN_SAME' },
+          { name: 'Re-run (new input)', value: 'RERUN_NEW' },
+        ]
+      : [
+          { name: 'Re-run', value: 'RERUN_SAME' },
+        ],
     lastNamespace && { name: 'Go back to namespace', value: 'GO_BACK_TO_NAMESPACE' },
     { name: 'Main menu', value: 'MENU' },
   ].filter(Boolean).flat() as { name: string, value: string }[]
@@ -321,7 +323,7 @@ async function showBlock<S extends Schema | undefined>(
 
 async function showBlocks<S extends Schema | undefined>(
   blocks: Registry<S>,
-  lastNamespace?: Namespace
+  lastNamespace?: Namespace,
 ) {
   const { blockName } = await prompt<{ blockName: string }>({
     type: 'select',
