@@ -35,7 +35,7 @@ Castor enables you to:
 
 * ✅ Block discovery from file system
 * ✅ Typed CLI prompts using `zod` schemas
-* ✅ D1 + `drizzle-orm` integration
+* ✅ `Cloudflare D1` + `drizzle-orm` integration
 * ⚠️ Danger mode prompts
 * 📄 Custom configs
 * 📝 Run with saved or new input
@@ -50,6 +50,19 @@ npm install -D @9aia/castor
 
 Or with other package managers like PNPM or Yarn!
 
+### Adding the Script to your `package.json` (Recommended)
+
+Add the `db:client` script to your `package.json`:
+
+```json
+// package.json
+{
+  "scripts": {
+    "db:client": "castor --config path/to/config.ts"
+  }
+}
+```
+
 ## Documentation
 
 // TODO: create a docs website
@@ -60,7 +73,7 @@ You can define your own config file using `defineConfig()`:
 
 ```ts
 // castor.config.ts
-import { defineConfig } from './src/sdk'
+import { defineConfig } from '@9aia/castor'
 
 export default defineConfig({
   rootDir: './db-client', // the directory Castor will explore
@@ -94,6 +107,9 @@ Blocks are typed and named operations. They can query or mutate your database:
 
 ```ts
 // ./db-client/user.ts
+import { block } from '@9aia/castor'
+import { eq } from 'drizzle-orm'
+import { z } from 'zod'
 import { users } from '~/db/schema'
 
 block('List all users', {
@@ -139,6 +155,9 @@ castor
 
 # or with config
 castor --config path/to/config.ts
+
+# or with a script (recommended)
+pnpm db:client
 ```
 
 You'll see a menu to select and run blocks.
