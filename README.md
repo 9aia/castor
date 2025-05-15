@@ -51,6 +51,23 @@ npm install -D @9aia/castor
 
 Or with other package managers like PNPM or Yarn!
 
+### Adding the database type to Castor
+
+Castor needs to know the type of your database. You can do this by adding a `types.d.ts` file to your project:
+
+```ts
+// types.d.ts
+import { Database } from '~/lib/db'
+
+declare module '@9aia/castor' {
+  interface Register {
+    database: Database
+  }
+}
+
+export {}
+```
+
 ### Adding the Script to your `package.json` (Recommended)
 
 Add the `db:client` script to your `package.json`:
@@ -66,16 +83,14 @@ Add the `db:client` script to your `package.json`:
 
 ## Documentation
 
-// TODO: create a docs website
-
 ### Configuring
 
 You can define your own config file using `defineConfig()`:
 
 ```ts
+import type { Database } from '~/'
 // castor.config.ts
 import { defineConfig } from '@9aia/castor'
-
 export default defineConfig({
   rootDir: './db-client', // the directory Castor will explore
   source: defaultSource => [...defaultSource, '!**.md'], // exclude MD files
@@ -132,18 +147,18 @@ block('Delete all users', {
 })
 ```
 
-Block signature:
+Block config signature:
 
 ```ts
-interface Block<S extends Schema | undefined = undefined> {
+interface BlockConfig<S extends Schema | undefined = undefined> {
   // Mark block as destructive (will ask for confirmation)
   danger?: boolean
   // Zod schema for validating input
   schema?: S
   // Async function to return or mutate data
-  query?: (db: Database, input: CheckUndefined<S, undefined, z.infer<WithoutUndefined<S>>>) => Promise<any> | any
+  query?: (db: ProvidedDatabase, input: InferBlockFnInput<S>) => Promise<any> | any
   // Async function for operations with side-effects
-  run?: (db: Database, input: CheckUndefined<S, undefined, z.infer<WithoutUndefined<S>>>) => Promise<any> | any
+  run?: (db: ProvidedDatabase, input: InferBlockFnInput<S>) => Promise<any> | any
 }
 ```
 
@@ -166,19 +181,31 @@ You'll see a menu to select and run blocks.
 Sample output:
 
 ```bash
-🦫 Castor DB Client
+🦫  Castor DB Client
 
-Blocks loaded: 2
+Config file not found at `castor.config.ts`. Using default config.
+6 blocks loaded. 2 namespaces loaded. 🔗
 
-> List all users
-> Enter value for limit (number): 10
+✔ Select a namespace to open · user
+Opening namespace: user (5 blocks)
 
-┌─────────┬──────────────┬──────────────┐
-│ (index) │ id           │ name         │
-├─────────┼──────────────┼──────────────┤
-│ 0       │ 'user_1'     │ 'Alice'      │
-│ 1       │ 'user_2'     │ 'Bob'        │
-└─────────┴──────────────┴──────────────┘
+✔ Select a block to run · List all users
+Page 1 of 30
+Showing rows 1-5 of 150
+┌─────────┬───────────────┬──────────┐
+│ (index) │ id            │ name     │
+├─────────┼───────────────┼──────────┤
+│ 0       │ 'dj2bh08yf2s' │ 'User 1' │
+│ 1       │ 'xizda46r5m8' │ 'User 2' │
+│ 2       │ 'il6qpw38j6'  │ 'User 3' │
+│ 3       │ 'l3uoalp72o8' │ 'User 4' │
+│ 4       │ 'eprfnwls63g' │ 'User 5' │
+└─────────┴───────────────┴──────────┘
+? Navigation: …
+▸ [>]
+  [30]
+  Go to specific page
+  Query menu
 ```
 
 ### How It Works
@@ -188,14 +215,10 @@ Castor scans your codebase for "blocks" — reusable JS/TS query definitions —
 Each block can:
 
 * Define a `schema` (input form, type-validated)
-* Contain a `query()` or `run()` function using `drizzle-orm`
-* Be marked as `danger` (requires confirmation)
+* Contain a `query()` and/or `run()` function using `drizzle-orm`
+* Be marked as `danger` (destructive and will ask for confirmation)
 
-It connects to a database (D1 or custom), prompts the user for any necessary input, and runs the logic.
-
-## Developing
-
-### Requirements
+It connects to a database (D1 or custom), prompts the user for any necessary input, runs the logic and prints the result.
 
 ## FAQ
 
