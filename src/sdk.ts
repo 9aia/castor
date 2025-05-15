@@ -14,7 +14,8 @@ export { z } from 'zod' // TODO: don't export zod anymore
 
 declare global {
   var __castorRegistry: BlockRegister<any>[]
-
+  var __castorNamespaces: Namespace[]
+  var __castorCwf: string | undefined
   namespace Castor {
     interface Register {
       database?: any
@@ -159,7 +160,8 @@ export function block<S extends Schema | undefined = undefined>(
   name: string,
   config: Omit<Block<S>, 'name'>,
 ) {
-  registerBlock({ name, ...config as any })
+  const file = globalThis.__castorCwf
+  registerBlock({ name, ...config as any }, file)
   return config
 }
 
@@ -192,13 +194,64 @@ export function getBlocks<S extends Schema | undefined>() {
   return [...globalThis.__castorRegistry] as Registry<S>
 }
 
-export async function loadSessions() {
+// #endregion
+
+// #region Namespaces
+
+export interface Namespace {
+  name: string
+  file?: string
+  blocks: BlockRegister<any>[]
+}
+
+if (!globalThis.__castorNamespaces) {
+  globalThis.__castorNamespaces = []
+}
+
+export function registerNamespace(namespace: Namespace) {
+  globalThis.__castorNamespaces.push(namespace)
+}
+
+export function getNamespaces() {
+  return [...globalThis.__castorNamespaces]
+}
+
+// NOTE: should we add `namespace(config)`?
+
+export function loadNamespaces() {
+  // TODO: add virtual namespace
+
+  for (const block of getBlocks()) {
+    if (!block.file)
+      continue
+
+    const namespace = globalThis.__castorNamespaces.find(namespace => namespace.file === block.file)
+    if (namespace) {
+      namespace.blocks.push(block)
+    }
+    else {
+      const namespaceName = path.basename(block.file, path.extname(block.file))
+      registerNamespace({
+        name: namespaceName,
+        file: block.file,
+        blocks: [block],
+      })
+    }
+  }
+}
+
+export async function loadSession() {
   const config = getConfig()
   const files = await fg(config.source, { absolute: true, cwd: config.rootDir })
 
   for (const file of files) {
+    globalThis.__castorCwf = file
     await import(file)
   }
+
+  globalThis.__castorCwf = undefined
+
+  loadNamespaces()
 }
 
 // #endregion

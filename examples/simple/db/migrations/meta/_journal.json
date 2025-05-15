@@ -8,6 +8,13 @@
       "when": 1746504824133,
       "tag": "0000_romantic_invisible_woman",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1747339175532,
+      "tag": "0001_goofy_shinobi_shaw",
+      "breakpoints": true
     }
   ]
 }

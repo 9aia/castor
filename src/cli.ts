@@ -1,19 +1,21 @@
 import type { z } from 'zod'
-import type { BlockRegister, Registry, Schema } from '~/sdk'
+import type { BlockRegister, Namespace, Registry, Schema } from '~/sdk'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { drizzle } from 'drizzle-orm/d1'
+import { getNamespaces } from '~/sdk'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const sdkPath = pathToFileURL(path.join(__dirname, './castor-sdk.es.js')).href
-const { loadConfig, loadSessions, getBlocks, getConfig } = await import(sdkPath)
+const { loadConfig, loadSession, getBlocks, getConfig } = await import(sdkPath)
 
 const { default: enquirer } = await import('enquirer')
 const { prompt } = enquirer
 
-// TODO: add support for folders and list files
+// TODO: simplify navigation with cancel handling
+// TODO: handle subnamespace names
 
 // TODO: add recently added blocks
 // TODO: prune removed blocks from saved json
@@ -124,7 +126,7 @@ export class CastorUnsupportedFieldError extends CastorError {
   }
 }
 
-async function showBlockForm(schema: z.ZodType) {
+async function showBlockForm(schema: z.ZodType, lastNamespace?: Namespace) {
   let input: unknown
 
   try {
@@ -133,7 +135,7 @@ async function showBlockForm(schema: z.ZodType) {
   catch (err) {
     if (err instanceof CastorUnsupportedFieldError) {
       console.error('❌ Error:', err.message)
-      return await showBlocks(getBlocks())
+      return await showBlocks(getBlocks(), lastNamespace)
     }
     throw err
   }
@@ -143,7 +145,7 @@ async function showBlockForm(schema: z.ZodType) {
     // TODO: add validation for each field using the schema
     // TODO: add better error handling with a menu (retry, go back to query, exit Castor)
     console.error('❌ Error validating input:', validation.error.format())
-    return await showBlockForm(schema)
+    return await showBlockForm(schema, lastNamespace)
   }
 
   return input
@@ -152,8 +154,9 @@ async function showBlockForm(schema: z.ZodType) {
 async function renderResult(result: any) {
   // TODO: add column filters
   // TODO: add column actions (copy, delete, edit, etc.)
-
+  
   const resultArray = Array.isArray(result) ? result : [result]
+  // TODO: add page size config
   const PAGE_SIZE = 5 // Number of rows per page
 
   if (resultArray.length === 0) {
@@ -195,7 +198,7 @@ async function renderResult(result: any) {
       hasNextPage && { name: NEXT, value: 'NEXT' },
       hasNextPage && { name: LAST, value: 'LAST' },
       { name: 'Go to specific page', value: 'SPECIFIC' },
-      { name: 'Go back to query', value: 'EXIT' },
+      { name: 'Query menu', value: 'QUERY_AGAIN' },
     ].filter(Boolean) as { name: string, value: string }[]
 
     const { action } = await prompt<{ action: string }>({
@@ -232,7 +235,7 @@ async function renderResult(result: any) {
       })
       await displayPage(Number.parseInt(pageNumber) - 1)
     }
-    else if (action === 'Go back to query') {
+    else if (action === 'Query menu') {
       // return
     }
   }
@@ -259,8 +262,12 @@ async function runBlock<S extends Schema | undefined>(block: BlockRegister<S>, i
   }
 }
 
-async function showBlock<S extends Schema | undefined>(block: BlockRegister<S>, lastInput?: any) {
-  const input = lastInput ?? (block.schema ? await showBlockForm(block.schema) : {})
+async function showBlock<S extends Schema | undefined>(
+  block: BlockRegister<S>,
+  lastInput?: any,
+  lastNamespace?: Namespace
+) {
+  const input = lastInput ?? (block.schema ? await showBlockForm(block.schema, lastNamespace) : {})
 
   if (block.danger) {
     const { confirm } = await prompt<{ confirm: boolean }>({
@@ -272,7 +279,7 @@ async function showBlock<S extends Schema | undefined>(block: BlockRegister<S>, 
 
     if (!confirm) {
       console.log('Block execution cancelled.')
-      return showBlocks(getBlocks())
+      return showBlocks(getBlocks(), lastNamespace)
     }
   }
 
@@ -281,19 +288,16 @@ async function showBlock<S extends Schema | undefined>(block: BlockRegister<S>, 
   console.log('')
 
   let choices = [
-    { name: 'Re-run (same input)', value: 'RERUN_SAME' },
-    { name: 'Re-run (new input)', value: 'RERUN_NEW' },
-    { name: 'Main menu', value: 'MENU' },
-    { name: 'Exit', value: 'EXIT' },
-  ]
-
-  if (!block.schema) {
-    choices = [
+    block.schema ? [
+      { name: 'Re-run (same input)', value: 'RERUN_SAME' },
+      { name: 'Re-run (new input)', value: 'RERUN_NEW' },
+    ] : [
       { name: 'Re-run', value: 'RERUN_SAME' },
-      { name: 'Main menu', value: 'MENU' },
-      { name: 'Exit', value: 'EXIT' },
-    ]
-  }
+    ],
+    lastNamespace && { name: 'Go back to namespace', value: 'GO_BACK_TO_NAMESPACE' },
+    { name: 'Main menu', value: 'MENU' },
+  ].filter(Boolean).flat() as { name: string, value: string }[]
+
   const { action } = await prompt<{ action: string }>({
     type: 'select',
     name: 'action',
@@ -302,21 +306,23 @@ async function showBlock<S extends Schema | undefined>(block: BlockRegister<S>, 
   })
 
   if (action === 'Re-run (same input)' || action === 'Re-run') {
-    return await showBlock(block, input)
+    return await showBlock(block, input, lastNamespace)
   }
   else if (action === 'Re-run (new input)') {
-    return await showBlock(block)
+    return await showBlock(block, undefined, lastNamespace)
+  }
+  else if (action === 'Go back to namespace') {
+    return await showNamespace(lastNamespace!)
   }
   else if (action === 'Main menu') {
-    return await showBlocks(getBlocks())
-  }
-  else if (action === 'Exit') {
-    console.log('Exiting...')
-    process.exit(0)
+    return await showMainMenu()
   }
 }
 
-async function showBlocks<S extends Schema | undefined>(blocks: Registry<S>) {
+async function showBlocks<S extends Schema | undefined>(
+  blocks: Registry<S>,
+  lastNamespace?: Namespace
+) {
   const { blockName } = await prompt<{ blockName: string }>({
     type: 'select',
     name: 'blockName',
@@ -325,7 +331,24 @@ async function showBlocks<S extends Schema | undefined>(blocks: Registry<S>) {
   })
 
   const block = blocks.find(b => b.name === blockName)!
-  await showBlock(block)
+  await showBlock(block, undefined, lastNamespace)
+}
+
+async function showNamespace(namespace: Namespace) {
+  console.log('Opening namespace:', namespace.name, `(${namespace.blocks.length} blocks)`, '\n')
+  await showBlocks(namespace.blocks, namespace)
+}
+
+async function showNamespaces(namespaces: Namespace[]) {
+  const { namespaceName } = await prompt<{ namespaceName: string }>({
+    type: 'select',
+    name: 'namespaceName',
+    message: 'Select a namespace to open',
+    choices: namespaces.map(n => ({ name: n.name })),
+  })
+
+  const namespace = namespaces.find(n => n.name === namespaceName)!
+  await showNamespace(namespace)
 }
 
 function validateConfigPath(filePath: string | undefined) {
@@ -352,6 +375,34 @@ async function loadDb() {
   throw new Error('Invalid dbProvider. Expected \'d1\' or a function that returns a database instance.')
 }
 
+async function showMainMenu(options?: { noMessages?: boolean }) {
+  const noMessages = options?.noMessages ?? true
+
+  const namespaces = getNamespaces()
+  const blocks = getBlocks()
+
+  if (blocks.length === 0) {
+    !noMessages && console.log('No blocks loaded.')
+    // NOTE: maybe in the future we must not exit if no blocks are loaded, because we can still open namespaces and take actions on them
+    process.exit(0)
+  }
+
+  if (!namespaces.length) {
+    !noMessages && console.log(`${blocks.length} blocks loaded. No namespaces loaded. 🔗`, '\n')
+    await showBlocks(blocks)
+    return
+  }
+
+  if (namespaces.length > 1) {
+    !noMessages && console.log(`${blocks.length} blocks loaded. ${namespaces.length} namespaces loaded. 🔗`, '\n')
+    await showNamespaces(namespaces)
+    return
+  }
+
+  !noMessages && console.log(`${namespaces.length} namespace loaded. 🔗`, '\n')
+  await showNamespace(namespaces[0])
+}
+
 async function main() {
   try {
     const configIndex = process.argv.indexOf('--config')
@@ -363,18 +414,9 @@ async function main() {
 
     await loadConfig(configPath)
     await loadDb()
-    await loadSessions()
+    await loadSession()
 
-    const blocks = getBlocks()
-
-    if (blocks.length === 0) {
-      console.log('No session found.')
-      process.exit(0)
-    }
-
-    console.log('Blocks loaded:', blocks.length, '\n')
-
-    await showBlocks(blocks)
+    await showMainMenu({ noMessages: false })
   }
   catch (err) {
     console.error('❌ Error:\n', err)

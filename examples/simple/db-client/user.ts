@@ -24,6 +24,19 @@ block('Insert a user', {
   ),
 })
 
+block('Insert X users', {
+  schema: z.number().min(1).max(90),
+  query: (db, input) => (
+    db.batch(
+      Array.from({ length: input }, (_, i) => (
+        db.insert(users).values({
+          id: Math.random().toString(36).slice(2),
+          name: `User ${i + 1}`,
+        }).returning()
+      )),
+    )
+  ),
+})
 block('Delete all users', {
   danger: true,
   query: db => (
