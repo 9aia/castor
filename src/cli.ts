@@ -13,6 +13,17 @@ const { loadConfig, loadSessions, getBlocks, getConfig } = await import(sdkPath)
 const { default: enquirer } = await import('enquirer')
 const { prompt } = enquirer
 
+// TODO: add support for folders and list files
+
+// TODO: add recently added blocks
+// TODO: prune removed blocks from saved json
+// TODO: add config for how recent the blocks are considered recent
+
+// TODO: add AI for executing blocks using natural language and prompting for input
+// TODO: re-register block before run, and add memo() for preventing re-computation
+// TODO: prettify Zod error output
+// TODO: refactor to @inquirer/prompts
+
 /* NOTE:
 1. How to allow for copying response columns?
 2. How to allow for copying response rows?
@@ -20,16 +31,6 @@ const { prompt } = enquirer
 4. Add a way to explore tables, procedures and more?
 5. Add dependable blocks?
 */
-
-// TODO: re-register block before run, and add memo() for preventing re-computation
-
-// TODO: add recently added blocks
-// TODO: prune removed blocks from saved json
-// TODO: add config for how recent the blocks are considered recent
-// TODO: add support for folders and list files
-// TODO: add AI for executing blocks using natural language and prompting for input
-// TODO: refactor to @inquirer/prompts
-// TODO: prettify Zod error output
 
 // #region Db
 
@@ -39,6 +40,8 @@ let db: unknown
 
 async function promptField(fieldName: string, field: unknown) {
   const typeName = (field as any)._def.typeName
+
+  // TODO: display min, max, default, etc.
 
   if (typeName === 'ZodString') {
     const { value } = await prompt<{ value: string }>({
@@ -146,19 +149,95 @@ async function showBlockForm(schema: z.ZodType) {
   return input
 }
 
-function renderResult(result: any) {
-  // TODO: paginate
+async function renderResult(result: any) {
   // TODO: add column filters
-  // TODO: add column actions (copy, delete, etc.)
+  // TODO: add column actions (copy, delete, edit, etc.)
 
   const resultArray = Array.isArray(result) ? result : [result]
+  const PAGE_SIZE = 5 // Number of rows per page
 
   if (resultArray.length === 0) {
     console.log('No results found.')
     return
   }
 
-  console.table(resultArray)
+  const currentPage = 0
+  const totalPages = Math.ceil(resultArray.length / PAGE_SIZE)
+
+  // TODO: create a custom paginator prompt
+  async function displayPage(page: number) {
+    const start = page * PAGE_SIZE
+    const end = start + PAGE_SIZE
+    const pageData = resultArray.slice(start, end)
+
+    const hasNextPage = page < totalPages - 1
+    const hasPreviousPage = page > 0
+
+    if (hasNextPage || hasPreviousPage) {
+      console.log(`Page ${page + 1} of ${totalPages}`)
+      console.log(`Showing rows ${start + 1}-${Math.min(end, resultArray.length)} of ${resultArray.length}`)
+    }
+
+    console.table(pageData.flat())
+
+    if (!hasNextPage && !hasPreviousPage) {
+      return
+    }
+
+    const NEXT = '[>]'
+    const PREV = '[<]'
+    const FIRST = '[1]'
+    const LAST = `[${totalPages}]`
+
+    const choices = [
+      hasPreviousPage && { name: PREV, value: 'PREV' },
+      hasPreviousPage && { name: FIRST, value: 'FIRST' },
+      hasNextPage && { name: NEXT, value: 'NEXT' },
+      hasNextPage && { name: LAST, value: 'LAST' },
+      { name: 'Go to specific page', value: 'SPECIFIC' },
+      { name: 'Go back to query', value: 'EXIT' },
+    ].filter(Boolean) as { name: string, value: string }[]
+
+    const { action } = await prompt<{ action: string }>({
+      type: 'select',
+      name: 'action',
+      message: 'Navigation:',
+      choices,
+    })
+
+    if (action === NEXT) {
+      await displayPage(page + 1)
+    }
+    else if (action === PREV) {
+      await displayPage(page - 1)
+    }
+    else if (action === FIRST) {
+      await displayPage(0)
+    }
+    else if (action === LAST) {
+      await displayPage(totalPages - 1)
+    }
+    else if (action === 'Go to specific page') {
+      const { pageNumber } = await prompt<{ pageNumber: string }>({
+        type: 'input',
+        name: 'pageNumber',
+        message: `Enter page number (1-${totalPages}):`,
+        validate: (input) => {
+          const num = Number.parseInt(input)
+          if (Number.isNaN(num) || num < 1 || num > totalPages) {
+            return `Please enter a number between 1 and ${totalPages}`
+          }
+          return true
+        },
+      })
+      await displayPage(Number.parseInt(pageNumber) - 1)
+    }
+    else if (action === 'Go back to query') {
+      // return
+    }
+  }
+
+  await displayPage(currentPage)
 }
 
 async function runBlock<S extends Schema | undefined>(block: BlockRegister<S>, input: unknown) {
@@ -167,7 +246,7 @@ async function runBlock<S extends Schema | undefined>(block: BlockRegister<S>, i
 
     if (block.query) {
       const result = await block.query?.(db as any, parsedInput)
-      renderResult(result)
+      await renderResult(result)
     }
 
     if (block.run) {
