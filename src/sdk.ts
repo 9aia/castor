@@ -13,14 +13,14 @@ declare global {
   var __castorRegistry: BlockRegister<any>[]
   var __castorNamespaces: Namespace[]
   var __castorCwf: string | undefined
-  namespace Castor {
-    interface Register {
-      database?: any
-    }
-  }
 }
 
-export type Database = Castor.Register['database']
+export interface Register {
+  // to be extended by the user
+}
+
+export type InferDatabase<R extends Record<string, any>> = R['database'] extends undefined ? unknown : R['database']
+export type ProvidedDatabase = InferDatabase<Register>
 
 // #region Config
 
@@ -28,7 +28,7 @@ export interface Config {
   rootDir?: string
   source?: Pattern | Pattern[] | ((defaultSource: Pattern[]) => Pattern[])
   drizzle?: DrizzleConfig
-  dbProvider?: 'd1' | (() => Promise<Database> | Database)
+  dbProvider?: 'd1' | (() => Promise<ProvidedDatabase> | ProvidedDatabase)
   wrangler?: GetPlatformProxyOptions
   d1?: {
     binding: string
@@ -55,7 +55,7 @@ export interface ResolvedConfig {
   rootDir: string
   source: Pattern[]
   drizzle?: Config['drizzle']
-  dbProvider: 'd1' | (() => Promise<Database> | Database)
+  dbProvider: 'd1' | (() => Promise<ProvidedDatabase> | ProvidedDatabase)
   wrangler: GetPlatformProxyOptions
   d1: {
     binding: string
@@ -140,8 +140,7 @@ export async function loadConfig(filePath?: string) {
 
 export type Schema = z.ZodType
 
-type WithoutUndefined<T> = T extends undefined ? never : T
-type CheckUndefined<T, V, F> = [T] extends [undefined] ? V : F
+export type InferBlockFnInput<S extends Schema | undefined = undefined> = S extends z.ZodType ? z.infer<S> : undefined
 
 export interface Block<S extends Schema | undefined = undefined> {
   name: string
@@ -149,13 +148,15 @@ export interface Block<S extends Schema | undefined = undefined> {
   danger?: boolean
   schema?: S
   file?: string
-  query?: (db: Database, input: CheckUndefined<S, undefined, z.infer<WithoutUndefined<S>>>) => Promise<any> | any
-  run?: (db: Database, input: CheckUndefined<S, undefined, z.infer<WithoutUndefined<S>>>) => Promise<any> | any
+  query?: (db: ProvidedDatabase, input: InferBlockFnInput<S>) => Promise<any> | any
+  run?: (db: ProvidedDatabase, input: InferBlockFnInput<S>) => Promise<any> | any
 }
+
+export type BlockConfig<S extends Schema | undefined = undefined> = Omit<Block<S>, 'name'>
 
 export function block<S extends Schema | undefined = undefined>(
   name: string,
-  config: Omit<Block<S>, 'name'>,
+  config: BlockConfig<S>,
 ) {
   const file = globalThis.__castorCwf
   registerBlock({ name, ...config as any }, file)

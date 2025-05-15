@@ -23,6 +23,7 @@ const { prompt } = enquirer
 
 // TODO: add AI for executing blocks using natural language and prompting for input
 // TODO: re-register block before run, and add memo() for preventing re-computation
+// TODO: add support for batch result displaying
 // TODO: prettify Zod error output
 // TODO: refactor to @inquirer/prompts
 
