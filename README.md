@@ -29,7 +29,8 @@ Castor enables you to:
 * ❌ GUI or Web UI
 * ❌ Query editors or ER diagram tools
 * ❌ Export/import utilities
-* ❌ Saving queries outside source code
+* ❌ Block versioning or saving queries outside source code (use `git` for that)
+* ❌ Agnostic data validation (use `zod` for now)
 
 ## Features
 
