@@ -1,10 +1,10 @@
+import type { z } from 'zod'
 import type { BlockRegister, Registry, Schema } from '~/sdk'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { drizzle } from 'drizzle-orm/d1'
-import { z } from 'zod'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const sdkPath = pathToFileURL(path.join(__dirname, './castor-sdk.es.js')).href
@@ -13,14 +13,13 @@ const { loadConfig, loadSessions, getBlocks, getConfig } = await import(sdkPath)
 const { default: enquirer } = await import('enquirer')
 const { prompt } = enquirer
 
-// NOTE:
-// 1. How to allow for copying response columns?
-// 2. How to allow for copying response rows?
-// 3. How to allow for copying response cells?
-
-// NOTE: add a way to explore tables, procedures and more?
-
-// TODO: add a simple example into README
+/* NOTE:
+1. How to allow for copying response columns?
+2. How to allow for copying response rows?
+3. How to allow for copying response cells?
+4. Add a way to explore tables, procedures and more?
+5. Add dependable blocks?
+*/
 
 // TODO: re-register block before run, and add memo() for preventing re-computation
 
@@ -29,10 +28,8 @@ const { prompt } = enquirer
 // TODO: add config for how recent the blocks are considered recent
 // TODO: add support for folders and list files
 // TODO: add AI for executing blocks using natural language and prompting for input
-// TODO: add linter
 // TODO: refactor to @inquirer/prompts
-
-// TODO: experiment dependable blocks
+// TODO: prettify Zod error output
 
 // #region Db
 
@@ -41,7 +38,9 @@ let db: unknown
 // #endregion
 
 async function promptField(fieldName: string, field: unknown) {
-  if (field instanceof z.ZodString) {
+  const typeName = (field as any)._def.typeName
+
+  if (typeName === 'ZodString') {
     const { value } = await prompt<{ value: string }>({
       type: 'input',
       name: 'value',
@@ -49,7 +48,7 @@ async function promptField(fieldName: string, field: unknown) {
     })
     return value
   }
-  else if (field instanceof z.ZodNumber) {
+  else if (typeName === 'ZodNumber') {
     const { value } = await prompt<{ value: number }>({
       type: 'input',
       name: 'value',
@@ -58,7 +57,7 @@ async function promptField(fieldName: string, field: unknown) {
     })
     return Number(value)
   }
-  else if (field instanceof z.ZodBoolean) {
+  else if (typeName === 'ZodBoolean') {
     const { value } = await prompt<{ value: string }>({
       type: 'select',
       name: 'value',
@@ -70,7 +69,7 @@ async function promptField(fieldName: string, field: unknown) {
     })
     return value === 'true'
   }
-  else if (field instanceof z.ZodArray) {
+  else if (typeName === 'ZodArray') {
     // Handle array fields by prompting for values one-by-one or using a special input format
     const { value } = await prompt<{ value: string }>({
       type: 'input',
@@ -79,8 +78,8 @@ async function promptField(fieldName: string, field: unknown) {
     })
     return value.split(',').map(item => item.trim())
   }
-  else if (field instanceof z.ZodEnum) {
-    const choices = field.options.map((option: any) => ({
+  else if (typeName === 'ZodEnum') {
+    const choices = (field as z.ZodEnum<any>).options.map((option: any) => ({
       name: option,
       value: option,
     }))
@@ -92,15 +91,9 @@ async function promptField(fieldName: string, field: unknown) {
     })
     return value
   }
-  // TODO: Add cases for other types as needed
-}
-
-async function showBlockForm(schema: z.ZodType) {
-  // TODO: add validation for each field using the schema
-
-  if (schema instanceof z.ZodObject) {
+  else if ((field as any)._def.typeName === 'ZodObject') {
     const input: any = {}
-    const shape = (schema as z.ZodObject<any, any, any>).shape
+    const shape = (field as z.ZodObject<any, any, any>).shape
 
     for (const [fieldName, field] of Object.entries(shape)) {
       const value = await promptField(fieldName, field)
@@ -109,15 +102,47 @@ async function showBlockForm(schema: z.ZodType) {
 
     return input
   }
+  else {
+    throw new CastorUnsupportedFieldError(typeName)
+  }
+}
 
-  const input = await promptField('input', schema)
+export class CastorError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'CastorError'
+  }
+}
+
+export class CastorUnsupportedFieldError extends CastorError {
+  constructor(fieldName: string) {
+    super(`Unsupported field type: ${fieldName}`)
+    this.name = 'CastorUnsupportedFieldError'
+  }
+}
+
+async function showBlockForm(schema: z.ZodType) {
+  let input: unknown
+
+  try {
+    input = await promptField('input', schema)
+  }
+  catch (err) {
+    if (err instanceof CastorUnsupportedFieldError) {
+      console.error('❌ Error:', err.message)
+      return await showBlocks(getBlocks())
+    }
+    throw err
+  }
+
   const validation = schema.safeParse(input)
   if (!validation.success) {
+    // TODO: add validation for each field using the schema
     // TODO: add better error handling with a menu (retry, go back to query, exit Castor)
-    // FIXME: infinite loop
     console.error('❌ Error validating input:', validation.error.format())
     return await showBlockForm(schema)
   }
+
   return input
 }
 
@@ -266,7 +291,6 @@ async function main() {
     if (blocks.length === 0) {
       console.log('No session found.')
       process.exit(0)
-      return
     }
 
     console.log('Blocks loaded:', blocks.length, '\n')
