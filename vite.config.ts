@@ -19,6 +19,7 @@ export default defineConfig({
     rollupOptions: {
       external: [
         'drizzle-orm',
+        'drizzle-orm/d1',
         'zod',
         'fast-glob',
         'node:fs',
