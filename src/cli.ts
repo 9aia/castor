@@ -32,7 +32,8 @@ const { prompt } = enquirer
 2. How to allow for copying response rows?
 3. How to allow for copying response cells?
 4. Add a way to explore tables, procedures and more?
-5. Add dependable blocks?
+5. Long horizontal tables should be scrollable?
+6. Add dependable blocks?
 */
 
 // #region Db
