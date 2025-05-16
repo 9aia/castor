@@ -14,6 +14,7 @@ const { loadConfig, loadSession, getBlocks, getConfig } = await import(sdkPath)
 const { default: enquirer } = await import('enquirer')
 const { prompt } = enquirer
 
+// TODO: add `$castor <filepath>` to load a file and run the blocks in it
 // TODO: simplify navigation with cancel handling
 // TODO: handle subnamespace names
 
