@@ -51,6 +51,9 @@ npm install -D @9aia/castor
 
 Or with other package managers like PNPM or Yarn!
 
+> [!WARNING]
+> `zod` and `drizzle` are peer dependencies and must be up to date with the version used by this package.
+
 ### Adding the database type to Castor
 
 Castor needs to know the type of your database. You can do this by adding a `types.d.ts` file to your project:
