@@ -2,8 +2,8 @@
   "compilerOptions": {
     "target": "ESNext",
     "baseUrl": ".",
-    "module": "ESNext",
-    "moduleResolution": "node",
+    "module": "Preserve",
+    "moduleResolution": "bundler",
     "paths": {
       "~/*": [
         "src/*"

@@ -9,3 +9,5 @@ declare module '@9aia/castor' {
     database: Database
   }
 }
+
+export {}
