@@ -43,6 +43,15 @@ Castor enables you to:
 
 ## Installing
 
+> [!WARNING]
+> > Castor requires [`tsx`](https://github.com/esbuild-kit/tsx) to run TypeScript files smoothly in your CLI.  
+> Install it globally or as a dev dependency:  
+> ```bash
+> npm install -g tsx
+> # or
+> npm install -D tsx
+> ```
+
 To install Castor, use NPM:
 
 ```bash
