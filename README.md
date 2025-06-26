@@ -100,9 +100,10 @@ Add the `db:client` script to your `package.json`:
 You can define your own config file using `defineConfig()`:
 
 ```ts
-import type { Database } from '~/'
 // castor.config.ts
+import type { Database } from '~/'
 import { defineConfig } from '@9aia/castor'
+
 export default defineConfig({
   rootDir: './db-client', // the directory Castor will explore
   source: defaultSource => [...defaultSource, '!**.md'], // exclude MD files
