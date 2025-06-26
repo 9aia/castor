@@ -84,7 +84,7 @@ export {}
 
 Add the `db:client` script to your `package.json`:
 
-```json
+```jsonc
 // package.json
 {
   "scripts": {
