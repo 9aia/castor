@@ -17,6 +17,7 @@ const { prompt } = enquirer
 // TODO: add `$castor <filepath>` to load a file and run the blocks in it
 // TODO: simplify navigation with cancel handling
 // TODO: handle subnamespace names
+// TODO: add support to dotenv
 
 // TODO: add recently added blocks
 // TODO: prune removed blocks from saved json
