@@ -19,6 +19,9 @@ const { prompt } = enquirer
 // TODO: handle subnamespace names
 // TODO: add support to dotenv
 
+// TODO: add support for default(), nativeEnum() and more
+
+// TODO: add hot reload when editing the blocks files while Castor is open
 // TODO: add recently added blocks
 // TODO: prune removed blocks from saved json
 // TODO: add config for how recent the blocks are considered recent
@@ -33,9 +36,9 @@ const { prompt } = enquirer
 1. How to allow for copying response columns?
 2. How to allow for copying response rows?
 3. How to allow for copying response cells?
-4. Add a way to explore tables, procedures and more?
-5. Long horizontal tables should be scrollable?
-6. Add dependable blocks?
+4. Do we need a way to explore tables, procedures and more?
+5. Should long horizontal tables be scrollable?
+6. Do we need dependable blocks?
 */
 
 // #region Db
