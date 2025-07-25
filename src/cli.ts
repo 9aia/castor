@@ -14,7 +14,7 @@ const { loadConfig, loadSession, getBlocks, getConfig } = await import(sdkPath)
 const { default: enquirer } = await import('enquirer')
 const { prompt } = enquirer
 
-// TODO: add `$castor <filepath>` to load a file and run the blocks in it
+// TODO: add `$ castor <filepath>` to load a file and run the blocks in it
 // TODO: simplify navigation with cancel handling
 // TODO: handle subnamespace names
 // TODO: add support to dotenv
@@ -31,6 +31,13 @@ const { prompt } = enquirer
 // TODO: add support for batch result displaying
 // TODO: prettify Zod error output
 // TODO: refactor to @inquirer/prompts
+
+/* TODO: brainstorm AI mode
+
+$ castor -p "list all users"
+# this will look for similar blocks using embeddings, then you can execute them by selecting.
+# you can also ask castor to generate the file and code block for you based on your prompt?
+*/
 
 /* NOTE:
 1. How to allow for copying response columns?
