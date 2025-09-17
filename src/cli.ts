@@ -14,6 +14,8 @@ const { loadConfig, loadSession, getBlocks, getConfig } = await import(sdkPath)
 const { default: enquirer } = await import('enquirer')
 const { prompt } = enquirer
 
+// TODO: rewrite as TUI
+  
 // TODO: add `$ castor <filepath>` to load a file and run the blocks in it
 // TODO: add support for running on remote db
 // TODO: simplify navigation with cancel handling
